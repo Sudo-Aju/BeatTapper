@@ -5,6 +5,7 @@ Beat Tapper is a minimalist rythm arcade engine built with vanilla javascript an
 ---
 
 ## core engine features
+
 ---
 the game was built using a custom engine based on html5 and javascript:
 
