@@ -11,17 +11,17 @@ button, #scoreValue, #statusValue {
     font-family: Arial;
 }
 
-#startButton {
+#startBtn {
     top: 20px;
     left:20px;
 }
 
-#statusValue {
+#status {
     top: 90px;
     left: 20px;
 }
 
-#scoreValue {
+#score {
     top: 60px;
     left: 20px;
 }
