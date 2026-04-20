@@ -3,3 +3,25 @@ body {
 
 canvas {
     display: block; width: 100vw; height: 100vh; }
+
+button, #scoreValue, #statusValue {
+    position: fixed;
+    z-index: 10;
+    color: white;
+    font-family: Arial;
+}
+
+#startButton {
+    top: 20px;
+    left:20px;
+}
+
+#statusValue {
+    top: 90px;
+    left: 20px;
+}
+
+#scoreValue {
+    top: 60px;
+    left: 20px;
+}
