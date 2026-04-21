@@ -1,22 +1,33 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>BeatTapper</title>
-        <link rel="stylesheet" href="styles.css">
-    </head>
-    <body>
-       <canvas id="gameCanvas"></canvas>
-
-        <div id="hud">
-       <div id="score">000000</div>
-       <div id="status">READY</div>
-       </div>
-
-       <div id ="combo">0</div>
-       <div id="judgement"></div>
-
-       <button id="startBtn">START</button>
-
-       <script src="main.js"></script>
+<head>
+<title>BeatTapper</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="game-container">
+<div class="hud">
+<div class="score-display">
+<span class="label">SCORE</span>
+<span id="score">000000</span>
+</div>
+<div class="status-display">
+<span id="status">Press Play</span>
+</div>
+<div class="combo-display">
+<span id="combo">0</span>
+<span class="label">COMBO</span>
+</div>
+<div id="judgement" class="judgement"></div>
+</div>
+<canvas id="gameCanvas"></canvas>
+<div class="controls">
+<button id="startBtn">Play</button>
+<div class="key-hint">
+Keys: A S D F | Click lanes
+</div>
+</div>
+</div>
+<script src="main.js"></script>
 </body>
 </html>

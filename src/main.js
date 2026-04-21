@@ -1,8 +1,20 @@
-const KEYS = ["KeyA", "KeyS", "KeyD", "KeyF"];
-const APPROACH_TIME = 1.4;
-const HIT_WINDOW = 0.18;
-const LANE_COUNT = 4;
-const NOTE_SPACING = 0.7;
+const CONSTANTS = {
+    KEYS: ["KeyA", "KeyS", "KeyD", "KeyF"],
+    APPROACH_TIME: 1.4,
+    HIT_WINDOW: 0.18,
+    LANE_COUNT: 4,
+    NOTE_SPACING: 0.7,
+    HIT_LINE_Y: 80,
+};
+
+const CHART = [
+    0, 1, 2, 3,
+    1, 2, 0, 3,
+    3, 2, 1, 0,
+].map((lane, index) => ({
+    lane,
+    time: 1 + index * CONSTANTS.NOTE_SPACING,
+}));
 
 const ui = {
     canvas: document.getElementById("gameCanvas"),
@@ -13,14 +25,6 @@ const ui = {
     startBtn: document.getElementById("startBtn"),
 };
 
-const CHART = [
-    0, 1, 2, 3,
-    1, 2, 0, 3,
-    3, 2, 1, 0,
-].map((lane, index) => ({
-    lane,
-    time: 1 + index * NOTE_SPACING,
-}));
 
 const ctx = ui.canvas.getContext("2d");
 
@@ -36,10 +40,12 @@ const state = {
     dpr: Math.min(window.devicePixelRatio || 1, 2),
 };
 
-let combo = 0;
-let lastJudgement = "";
-let judgementTimer = 0;
-let laneFlashes = [0, 0, 0, 0];
+const visuals ={
+    combo: 0,
+    lastJudgement: "",
+    judgementTimer: 0,
+    laneFlashes: [0, 0, 0, 0],
+};
 
 function init() {
     resizeCanvas();
@@ -49,29 +55,28 @@ function init() {
 }
 
 function bindEvents() {
-    ui.startBtn.addEventListener("click", () => {
-        startGame();
-    })
+    ui.startBtn.addEventListener("click",startGame);
 
-    window.addEventListener("keydown", (event) => {
-        const lane = KEYS.indexOf(event.code);
-        if (lane === -1) return;
-
-        event.preventDefault();
-
-        laneFlashes[lane] = 10;
-
-        hitLane(lane);
-    });
-
-    ui.canvas.addEventListener("pointerdown", (event) => {
-        const rect = ui.canvas.getBoundingClientRect();
-        const x = ((event.clientX - rect.left) / rect.width) * state.width;
-        const laneWidth = state.width / LANE_COUNT;
-        hitLane(Math.max(0, Math.min(LANE_COUNT - 1, Math.floor(x / laneWidth))));
-    });
-
+    window.addEventListener("keydown", handleKeyDown);
+    ui.canvas.addEventListener("pointerdown", handlePointerDown);
     window.addEventListener("resize", resizeCanvas);
+}
+
+function handleKeyDown(event) {
+    const lane = CONSTANTS.KEYS.indexOf(event.code);
+    if (lane === -1) return;
+
+    event.preventDefault();
+    visuals.laneFlashes[lane] = 10;
+    hitLane(lane);
+}
+
+
+function handlePointerDown(event) {
+    const rect = ui.canvas.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * state.width;
+    const laneWidth = state.width / CONSTANTS.LANE_COUNT;
+    hitLane(Math.max(0, Math.min(CONSTANTS.LANE_COUNT - 1, Math.floor(x / laneWidth))));
 }
 
 function startGame() {
@@ -79,7 +84,7 @@ function startGame() {
     state.startAt = performance.now();
     state.elapsed = 0;
     state.score = 0;
-    combo = 0;
+    visuals.combo = 0;
 
     state.message = "Playing";
 
@@ -93,13 +98,15 @@ function startGame() {
 }
 
 function triggerJudgement(msg) {
-    lastJudgement = msg;
-    judgementTimer = 30;
+    visuals.lastJudgement = msg;
+    visuals.judgementTimer = 30;
+
+    ui.judgement.className = "judgement " + msg.toLowerCase();
 
     if (msg === "MISS") {
-        combo = 0;
+        visuals.combo = 0;
     } else {
-            combo++;
+            visuals.combo++;
     }
 }
 
@@ -113,7 +120,7 @@ function hitLane(lane) {
         !item.hit &&
         !item.missed &&
         item.lane === lane &&
-        Math.abs(item.time - time) <= HIT_WINDOW,
+        Math.abs(item.time - time) <= CONSTANTS.HIT_WINDOW,
 );
 
 if (!note) {
@@ -127,7 +134,6 @@ note.hit = true;
 state.score += 100;
 
 triggerJudgement("PERFECT");
-
 state.message = "Hit";
 updateHud();
 }
@@ -138,7 +144,7 @@ function update() {
     state.elapsed = (performance.now() - state.startAt) / 1000;
 
     for (const note of state.notes) {
-        if (!note.hit && !note.missed && state.elapsed - note.time > HIT_WINDOW) {
+        if (!note.hit && !note.missed && state.elapsed - note.time > CONSTANTS.HIT_WINDOW) {
             note.missed = true;
             triggerJudgement("MISS");
             state.message = "Miss";
@@ -161,21 +167,21 @@ function draw(){
     ctx.fillStyle = "#132952";
     ctx.fillRect(0, 0, state.width, state.height);
 
-    const laneWidth = state.width / LANE_COUNT;
-    const hitLineY = state.height - 80;
+    const laneWidth = state.width / CONSTANTS.LANE_COUNT;
+    const hitLineY = state.height - CONSTANTS.HIT_LINE_Y;
     const time = state.elapsed;
 
-    for (let i = 0; i < LANE_COUNT; i++) {
-        if(laneFlashes[i] > 0) {
-            ctx.fillStyle = `rgba(255, 255, 255, ${laneFlashes[i] / 20})`;
+    for (let i = 0; i < CONSTANTS.LANE_COUNT; i++) {
+        if(visuals.laneFlashes[i] > 0) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${visuals.laneFlashes[i] / 20})`;
             ctx.fillRect(i * laneWidth, 0, laneWidth, state.height);
-            laneFlashes[i]--;
+            visuals.laneFlashes[i]--;
         }
     }
 
     ctx.strokeStyle = "rgba(219, 171, 75, 0.28)";
     ctx.lineWidth = 2;
-    for (let lane = 1; lane < LANE_COUNT; lane++) {
+    for (let lane = 1; lane < CONSTANTS.LANE_COUNT; lane++) {
         ctx.beginPath();
         ctx.moveTo(lane * laneWidth, 0);
         ctx.lineTo(lane * laneWidth, state.height); 
@@ -193,9 +199,9 @@ function draw(){
         if (note.hit) continue;
 
         const distance = note.time - time;
-        if (distance > APPROACH_TIME || distance < -HIT_WINDOW) continue;
+        if (distance > CONSTANTS.APPROACH_TIME || distance < - CONSTANTS.HIT_WINDOW) continue;
 
-        const progress = 1 - distance / APPROACH_TIME;
+        const progress = 1 - distance / CONSTANTS.APPROACH_TIME;
 
         const x = note.lane * laneWidth + laneWidth * 0.15;
         const y = progress * (hitLineY - 40);
@@ -209,8 +215,8 @@ function draw(){
         ctx.fillRect(x, y, width, height);
     }
 
-    if (judgementTimer > 0) {
-        judgementTimer--;
+    if (visuals.judgementTimer > 0) {
+        visuals.judgementTimer--;
     }
 }
 
@@ -223,8 +229,8 @@ function loop() {
 function updateHud() {
     ui.score.textContent = String(state.score).padStart(6, "0");
     ui.status.textContent = state.message;
-    ui.combo.textContent = combo;
-    ui.judgement.textContent = judgementTimer > 0 ? lastJudgement : "";
+    ui.combo.textContent = visuals.combo;
+    ui.judgement.textContent = visuals.judgementTimer > 0 ? visuals.lastJudgement : "";
 }
 
 function resizeCanvas() {
