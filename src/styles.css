@@ -1,27 +1,88 @@
 body {
-    margin: 0; background: #000; overflow: hidden; }
+    margin: 0; 
+    overflow: hidden; 
+    background: radial-gradient(circle at center, #0f1a3a, #050814);
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
 
 canvas {
-    display: block; width: 100vw; height: 100vh; }
-
-button, #scoreValue, #statusValue {
-    position: fixed;
-    z-index: 10;
-    color: white;
-    font-family: Arial;
+    display: block; 
+    width: 100vw; 
+    height: 100vh; 
 }
 
-#startBtn {
-    top: 20px;
-    left:20px;
-}
-
-#status {
-    top: 90px;
-    left: 20px;
+#hud {
+   position: fixed;
+   bottom: 40px;
+   left: 50%;
+   padding: 12px 18px;
+   border-radius: rgba(0, 0, 0, 0.45);
+   backdrop-filter: blur(10px);
+   color: white;
+   z-index: 10;
+   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5)
 }
 
 #score {
-    top: 60px;
-    left: 20px;
+    font-size: 26px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+#status {
+    font-size: 13px;
+    opacity: 0.7;
+    margin-top: 4px;
+}
+
+#combo {
+    position: fixed;
+    top: 42%;
+    width: 100%;
+    text-align: center;
+    font-size: 70px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 0 25px rgba(255, 255, 255, 0.6);
+    z-index: 10;
+    transition: transform 0.1s ease;
+}
+
+#judgement {
+    position: fixed;
+    top: 55%;
+    width: 100%;
+    text-align: center;
+    font-size: 26px;
+    font-weight: bold;
+    text-shadow: 0 0 15px rgba(219, 171, 75, 0.8);
+    z-index: 10;
+}
+
+#startBtn {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 14px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #DBAB4B, #ffcc66);
+    color: #000;
+    box-shadow:
+        0 0 15px rgba(219, 171, 75, 0.6),
+        0 0 30px rgba(219, 171, 75, 0.3);
+    transition: all 0.2s ease;
+    z-index:10;
+}
+
+#startBtn:hover {
+    transform: translate(-50%) scale(1.08);
+}
+
+#startBtn:active {
+    transform: translateX(-50%) scale(0.95);
 }
