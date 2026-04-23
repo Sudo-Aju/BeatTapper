@@ -1,20 +1,5 @@
-const CONSTANTS = {
-    KEYS: ["KeyA", "KeyS", "KeyD", "KeyF"],
-    APPROACH_TIME: 1.4,
-    HIT_WINDOW: 0.18,
-    LANE_COUNT: 4,
-    NOTE_SPACING: 0.7,
-    HIT_LINE_Y: 80,
-};
-
-const CHART = [
-    0, 1, 2, 3,
-    1, 2, 0, 3,
-    3, 2, 1, 0,
-].map((lane, index) => ({
-    lane,
-    time: 1 + index * CONSTANTS.NOTE_SPACING,
-}));
+import { InputManager } from "./modules/InputManager.js";
+import { CONFIG, CHART } from "./modules/GameConfig.js";
 
 const ui = {
     canvas: document.getElementById("gameCanvas"),
@@ -23,8 +8,9 @@ const ui = {
     combo: document.getElementById("combo"),
     judgement: document.getElementById("judgement"),
     startBtn: document.getElementById("startBtn"),
+    keySlots: document.getElementById("keySlots"),
+    bufferSize: document.getElementById("bufferSize")
 };
-
 
 const ctx = ui.canvas.getContext("2d");
 
@@ -47,6 +33,12 @@ const visuals ={
     laneFlashes: [0, 0, 0, 0],
 };
 
+const input = new InputManager(CONFIG.LANE_COUNT);
+
+input.onLaneHit =(lane) => {
+    visuals.laneFlashes[lane] = 12;
+};
+
 function init() {
     resizeCanvas();
     bindEvents();
@@ -57,29 +49,17 @@ function init() {
 function bindEvents() {
     ui.startBtn.addEventListener("click",startGame);
 
-    window.addEventListener("keydown", handleKeyDown);
-    ui.canvas.addEventListener("pointerdown", handlePointerDown);
+    ui.canvas.addEventListener("pointerdown", (e) => {
+        const rect = ui.canvas.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * state.width;
+        input.handlePointer(x, state.width);
+    });
+
     window.addEventListener("resize", resizeCanvas);
 }
 
-function handleKeyDown(event) {
-    const lane = CONSTANTS.KEYS.indexOf(event.code);
-    if (lane === -1) return;
-
-    event.preventDefault();
-    visuals.laneFlashes[lane] = 10;
-    hitLane(lane);
-}
-
-
-function handlePointerDown(event) {
-    const rect = ui.canvas.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * state.width;
-    const laneWidth = state.width / CONSTANTS.LANE_COUNT;
-    hitLane(Math.max(0, Math.min(CONSTANTS.LANE_COUNT - 1, Math.floor(x / laneWidth))));
-}
-
 function startGame() {
+    input.reset()
     state.running = true;
     state.startAt = performance.now();
     state.elapsed = 0;
@@ -120,7 +100,7 @@ function hitLane(lane) {
         !item.hit &&
         !item.missed &&
         item.lane === lane &&
-        Math.abs(item.time - time) <= CONSTANTS.HIT_WINDOW,
+        Math.abs(item.time - time) <= CONFIG.HIT_WINDOW
 );
 
 if (!note) {
@@ -131,11 +111,15 @@ if (!note) {
 }
 
 note.hit = true;
-state.score += 100;
+state.score += CONFIG.BASE_SCORE;
 
-triggerJudgement("PERFECT");
+const diff = Math.abs(note.time - time);
+
+if (diff < 0.05) triggerJudgement("PERFECT");
+else if (diff < 0.1) triggerJudgement("GREAT");
+else triggerJudgement("GOOD");
+
 state.message = "Hit";
-updateHud();
 }
 
 function update() {
@@ -143,19 +127,23 @@ function update() {
 
     state.elapsed = (performance.now() - state.startAt) / 1000;
 
+    input.update();
+    input.processBuffer(performance.now(), (lane) => {
+        visuals.laneFlashes[lane] = 12;
+        hitLane(lane)
+    });
+    
     for (const note of state.notes) {
-        if (!note.hit && !note.missed && state.elapsed - note.time > CONSTANTS.HIT_WINDOW) {
+        if (!note.hit && !note.missed && state.elapsed - note.time > CONFIG.HIT_WINDOW) {
             note.missed = true;
             triggerJudgement("MISS");
-            state.message = "Miss";
         }
     }
 
-    if (state.elapsed > CHART[CHART.length -1].time + 1) {
-        state.running = false;
+    if (state.elapsed > CHART[CHART.length - 1].time +1) {
+        state.running = false
         state.message = "Finished";
     }
-
     updateHud();
 }
 
@@ -167,11 +155,13 @@ function draw(){
     ctx.fillStyle = "#132952";
     ctx.fillRect(0, 0, state.width, state.height);
 
-    const laneWidth = state.width / CONSTANTS.LANE_COUNT;
-    const hitLineY = state.height - CONSTANTS.HIT_LINE_Y;
+   
+    const laneWidth = state.width / CONFIG.LANE_COUNT;
+    const hitLineY = state.height - CONFIG.HIT_LINE_Y;
     const time = state.elapsed;
 
-    for (let i = 0; i < CONSTANTS.LANE_COUNT; i++) {
+    
+    for (let i = 0; i < CONFIG.LANE_COUNT; i++) {
         if(visuals.laneFlashes[i] > 0) {
             ctx.fillStyle = `rgba(255, 255, 255, ${visuals.laneFlashes[i] / 20})`;
             ctx.fillRect(i * laneWidth, 0, laneWidth, state.height);
@@ -181,7 +171,7 @@ function draw(){
 
     ctx.strokeStyle = "rgba(219, 171, 75, 0.28)";
     ctx.lineWidth = 2;
-    for (let lane = 1; lane < CONSTANTS.LANE_COUNT; lane++) {
+    for (let lane = 1; lane < CONFIG.LANE_COUNT; lane++) {
         ctx.beginPath();
         ctx.moveTo(lane * laneWidth, 0);
         ctx.lineTo(lane * laneWidth, state.height); 
@@ -199,10 +189,9 @@ function draw(){
         if (note.hit) continue;
 
         const distance = note.time - time;
-        if (distance > CONSTANTS.APPROACH_TIME || distance < - CONSTANTS.HIT_WINDOW) continue;
+        if (distance > CONFIG.APPROACH_TIME || distance < - CONFIG.HIT_WINDOW) continue;
 
-        const progress = 1 - distance / CONSTANTS.APPROACH_TIME;
-
+        const progress = 1 - distance / CONFIG.APPROACH_TIME;
         const x = note.lane * laneWidth + laneWidth * 0.15;
         const y = progress * (hitLineY - 40);
         const width = laneWidth * 0.7;
