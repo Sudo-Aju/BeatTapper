@@ -1,33 +1,57 @@
 <!DOCTYPE html>
 <html>
-<head>
-<title>BeatTapper</title>
-<link rel="stylesheet" href="styles.css">
-</head>
+    <head>
+        <title>BeatTapper</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
 <body>
-<div class="game-container">
-<div class="hud">
-<div class="score-display">
-<span class="label">SCORE</span>
-<span id="score">000000</span>
-</div>
-<div class="status-display">
-<span id="status">Press Play</span>
-</div>
-<div class="combo-display">
-<span id="combo">0</span>
-<span class="label">COMBO</span>
-</div>
-<div id="judgement" class="judgement"></div>
-</div>
-<canvas id="gameCanvas"></canvas>
-<div class="controls">
-<button id="startBtn">Play</button>
-<div class="key-hint">
-Keys: A S D F | Click lanes
-</div>
-</div>
-</div>
-<script type="module" src="main.js"></script>
+    <div class="game-container">
+
+        <div class="hud">
+            <div class="score-display">
+                <span class="label">SCORE</span>
+                <span id="score">000000</span>
+            </div>
+
+            <div class="status-display">
+                <span id="status">Press Play</span>
+            </div>
+
+            <div class="combo-display">
+                <span id="combo">0</span>
+                <span class="label">COMBO</span>
+            </div>
+
+            <div id="judgement" class="judgement"></div>
+        </div>
+
+        <div class="timing-info">
+            <div id="timingDisplay"></div>
+            <div>FPS: <span id="fpsDisplay">60</span></div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="controls">
+            <button id="startBtn">Play</button>
+
+            <div class="key-config">
+                <span>Lane Keys:</span>
+                <div class="key-slots" id="keySlots">
+                    <div class="key-slot">A</div>
+                    <div class="key-slot">S</div>
+                    <div class="key-slot">D</div>
+                    <div class="key-slot">F</div>
+                </div>
+            </div>
+
+            <div class="key-hint">
+                Buffer: <span id="bufferSize">0</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module" src="main.js"></script>
 </body>
 </html>

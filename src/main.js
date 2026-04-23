@@ -1,5 +1,6 @@
 import { InputManager } from "./modules/InputManager.js";
 import { CONFIG, CHART } from "./modules/GameConfig.js";
+import { TimingController } from "./modules/TimingController.js"
 
 const ui = {
     canvas: document.getElementById("gameCanvas"),
@@ -16,27 +17,28 @@ const ctx = ui.canvas.getContext("2d");
 
 const state = {
     running: false,
-    startAt: 0,
-    elapsed: 0,
     score: 0,
     notes: [],
     message: "Press Play",
     width: 0,
     height: 0,
     dpr: Math.min(window.devicePixelRatio || 1, 2),
+    hits: { PERFECT: 0, GREAT: 0, GOOD: 0, MISS: 0},
 };
 
 const visuals ={
     combo: 0,
     lastJudgement: "",
     judgementTimer: 0,
-    laneFlashes: [0, 0, 0, 0],
 };
 
 const input = new InputManager(CONFIG.LANE_COUNT);
+const timing = new TimingController();
 
 input.onLaneHit =(lane) => {
-    visuals.laneFlashes[lane] = 12;
+    if (state.running) {
+        handleInput(lane);
+    }
 };
 
 function init() {
@@ -60,11 +62,14 @@ function bindEvents() {
 
 function startGame() {
     input.reset()
+
     state.running = true;
-    state.startAt = performance.now();
-    state.elapsed = 0;
     state.score = 0;
     visuals.combo = 0;
+    state.hits = { PERFECT: 0, GREAT: 0, GOOD: 0, MISS: 0};
+
+    timing.reset();
+    timing.start();
 
     state.message = "Playing";
 
@@ -77,73 +82,79 @@ function startGame() {
     updateHud();
 }
 
-function triggerJudgement(msg) {
-    visuals.lastJudgement = msg;
-    visuals.judgementTimer = 30;
-
-    ui.judgement.className = "judgement " + msg.toLowerCase();
-
-    if (msg === "MISS") {
-        visuals.combo = 0;
-    } else {
-            visuals.combo++;
-    }
-}
-
-function hitLane(lane) {
+function handleInput(lane) {
     if (!state.running) return;
 
-    const time = getSongTime();
+    const songTime = timing.getSongTime();
 
-    const note = state.notes.find(
-        (item) =>
-        !item.hit &&
-        !item.missed &&
-        item.lane === lane &&
-        Math.abs(item.time - time) <= CONFIG.HIT_WINDOW
-);
+    const note = state.notes.find(n => 
+        !n.hit &&
+        !n.missed &&
+        n.lane === lane
+    );
 
-if (!note) {
-    triggerJudgement("MISS");
-    state.message = "Miss";
-    updateHud();
-    return;
+    if (!note) {
+        triggerJudgement("MISS", 0);
+        return;
+    }
+
+    const timeDiff = note.time - songTime;
+    const judgement = timing.getJudgement(timeDiff);
+
+    if (!judgement) {
+        triggerJudgement("MISS", timeDiff);
+        return;
+    }
+
+    note.hit = true;
+    triggerJudgement(judgement, timeDiff);
 }
 
-note.hit = true;
-state.score += CONFIG.BASE_SCORE;
+function triggerJudgement(type, timeDiff) {
+    visuals.lastJudgement = type;
+    visuals.judgementTimer = 30;
 
-const diff = Math.abs(note.time - time);
+    ui.judgement.className = "judgement " + type.toLowerCase();
 
-if (diff < 0.05) triggerJudgement("PERFECT");
-else if (diff < 0.1) triggerJudgement("GREAT");
-else triggerJudgement("GOOD");
+    state.hits[type]++;
 
-state.message = "Hit";
+    if (type === "MISS") {
+        visuals.combo = 0;
+    } else { 
+        visuals.combo++;
+    }
+
+    const multiplier = timing.getScoreMultiplier(type);
+    const scoreGain = Math.floor(CONFIG.BASE_SCORE * multiplier * (1 + visuals.combo * 0.05));
+
+    state.score += scoreGain;
+    state.message = type;
 }
 
 function update() {
     if (!state.running) return;
 
-    state.elapsed = (performance.now() - state.startAt) / 1000;
-
+    timing.update();
     input.update();
-    input.processBuffer(performance.now(), (lane) => {
-        visuals.laneFlashes[lane] = 12;
-        hitLane(lane)
-    });
     
+    const songTime = timing.getSongTime();
+
     for (const note of state.notes) {
-        if (!note.hit && !note.missed && state.elapsed - note.time > CONFIG.HIT_WINDOW) {
-            note.missed = true;
-            triggerJudgement("MISS");
+        if (!note.hit && !note.missed) {
+            const diff = note.time - songTime;
+            if (diff < -CONFIG.HIT_WINDOW.MISS) {
+                note.missed = true;
+                triggerJudgement("MISS", diff);
+            }
         }
     }
 
-    if (state.elapsed > CHART[CHART.length - 1].time +1) {
-        state.running = false
+    const last = state.notes[state.notes.length - 1];
+    if (last && songTime > last.time + 1) {
+        state.running = false;
         state.message = "Finished";
     }
+
     updateHud();
 }
 
@@ -158,14 +169,13 @@ function draw(){
    
     const laneWidth = state.width / CONFIG.LANE_COUNT;
     const hitLineY = state.height - CONFIG.HIT_LINE_Y;
-    const time = state.elapsed;
+    const songTime = timing.getSongTime();
 
-    
+    const active = input.getActiveLanes();
     for (let i = 0; i < CONFIG.LANE_COUNT; i++) {
-        if(visuals.laneFlashes[i] > 0) {
-            ctx.fillStyle = `rgba(255, 255, 255, ${visuals.laneFlashes[i] / 20})`;
-            ctx.fillRect(i * laneWidth, 0, laneWidth, state.height);
-            visuals.laneFlashes[i]--;
+        if (active[i]) {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+            ctx.fillRect(i * laneWidth, 0, laneWidth, state.height)
         }
     }
 
@@ -188,20 +198,19 @@ function draw(){
     for (const note of state.notes) {
         if (note.hit) continue;
 
-        const distance = note.time - time;
+        const distance = note.time - songTime;
         if (distance > CONFIG.APPROACH_TIME || distance < - CONFIG.HIT_WINDOW) continue;
 
         const progress = 1 - distance / CONFIG.APPROACH_TIME;
+        
         const x = note.lane * laneWidth + laneWidth * 0.15;
         const y = progress * (hitLineY - 40);
-        const width = laneWidth * 0.7;
-        const height = 20;
 
         ctx.fillStyle = note.missed
-        ? "rgba(219, 171, 75, 0.35)"
-        : "#DBAB4B";
+            ? "rgba(219, 171, 75, 0.35)"
+            : "#DBAB4B";
 
-        ctx.fillRect(x, y, width, height);
+        ctx.fillRect(x, y, laneWidth * 0.7, CONFIG.NOTE_HEIGHT);
     }
 
     if (visuals.judgementTimer > 0) {
@@ -212,6 +221,15 @@ function draw(){
 function loop() {
     update();
     draw();
+
+    if (ui.bufferSize) {
+        ui.bufferSize.textContent = input.getBufferSize();
+    }
+
+    if (ui.fpsDisplay) {
+        ui.fpsDisplay.textContent = timing.getFPS();
+    }
+
     requestAnimationFrame(loop);
 }
 
@@ -225,16 +243,11 @@ function updateHud() {
 function resizeCanvas() {
     const rect = ui.canvas.getBoundingClientRect();
 
-    state.dpr = Math.min(window.devicePixelRatio || 1, 2);
     state.width = Math.max(320, Math.floor(rect.width));
     state.height = Math.max(320, Math.floor(rect.height));
 
     ui.canvas.width = state.width * state.dpr;
     ui.canvas.height = state.height * state.dpr;
-}
-
-function getSongTime() {
-    return state.elapsed;
 }
 
 init();

@@ -97,7 +97,7 @@ export class InputManager {
             if (this.activeTimers[i] > 0) {
                 this.activeTimers[i]--;
 
-                if (this.activeTimers[i] > 0) {
+                if (this.activeTimers[i] <= 0) {
                     this.activeLanes[i] = false;
                 }
             }
