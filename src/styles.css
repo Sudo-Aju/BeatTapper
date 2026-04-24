@@ -4,281 +4,121 @@
     box-sizing: border-box;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #0a0a0a;
+    font: 14px Arial, sans-serif;
+    background: #000;
     color: #fff;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+    justify-content: 100vh;
     overflow: hidden;
 }
 
-.game-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    width: 100%;
-    max-width: 600px;
-    padding: 20px;
-}
-
-.hud {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    padding: 12px 20px;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border-radius: 12px;
-    border: 1px solid rgba(219, 171, 75, 0.3);
-    position: relative;
-}
-
-.score-display {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-.score-display .label {
-    font-size: 10px;
-    color: #888;  
-    letter-spacing: 2px;
-}
-
-#score {
-    font-size: 24px;
-    font-weight: bold;
-    color: #DBAB4B;
-    font-family: 'Courier New', monospace;
-}
-
-.status-display {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    text-align: center;
-}
-
-#status {
-    font-size: 14px;
-    color: #aaa;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.combo-display {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-}
-
-.combo-display .label {
-    font-size: 10px;
-    color: #888;
-    letter-spacing: 2px;
-}
-
-#combo {
-    font-size: 24px;
-    font-weight: bold;
+button {
+    font: inherit;
+    padding: 12px 16px;
+    border: 1px solid #fff;
+    background: #000;
     color: #fff;
-}
-
-.judgement {
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-top: 8px;
-    font-size: 28px;
-    font-weight: bold;
-    text-shadow: 0 0 20px currentColor;
-}
-
-.judgement.perfect {
-    color: #FFD700;
-}
-
-.judgement.great {
-    color: #00FF88;
-}
-
-.judgement.good {
-    color: #4FC3F7;
-}
-
-.judgement.miss {
-    color: #FF5252;
-}
-
-#gameCanvas {
-    width: 100%;
-    aspect-ratio: 4/5;
-    background: #132952;
-    border-radius: 12px;
-    border: 2px solid rgba(219, 171, 75, 0.5);
+    border-radius: 4px;
     cursor: pointer;
 }
 
-.controls {
+button:hover, #difficultSelector.a, #keys .a, .p {
+    background: #fff;
+    color: #000;
+    border-color: #fff;
+}
+
+section {
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: min(100%, 640px);
+    min-height: 100vh;
+    padding: 32px 20px;
+}
+
+#main-menu {
+    justify-content: center;
+    gap: 48px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 56px;
+    letter-spacing: 4px;
+}
+
+h2 {
+    font-size: 32px;
+}
+
+p, small {
+    color: #bbb;
+}
+
+nav, #songsList, #controls {
+    display: flex; 
+    flex-direction: column;
+}
+
+nav {
     gap: 12px;
+    width: min(100%, 280px);
 }
 
-#startBtn {
-    padding: 14px 48px;
+#song-select > div:first-child {
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#songsList {
+    gap: 12px;
+    max-height: 50vh;
+    overflow: auto;
+}
+
+#songsList > dev {
+    padding: 16px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#songsList > div:hover, #songsList > .a {
+    background: #111;
+    border-color: #fff;
+}
+
+#songList b {
+    display: block;
     font-size: 18px;
-    font-weight: bold;
-    background: linear-gradient(135deg, #DBAB4B 0%, #C49A3B 100%);
-    color: #132952;
-    border: none;
-    border-radius: 30px;
-    cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-#startBtn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 20px rgba(219, 171, 75, 0.4);
+#songList b {
+    display: block;
+    font-size: 18px;
 }
 
-#startBtn:active {
-    transform: scale(0.98);
+#songList small {
+    display: block;
+    margin-top: 6px;
 }
 
-.key-config {
+#difficultySelector, #resultStats, #counts, #resultButton, #keys {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    justify-content: center;
     gap: 8px;
 }
 
-.key-config span {
-    font-size: 12px;
-    color: #888;
-}
-
-.key-slots {
-    display: flex;
-    gap: 8px;
-}
-
-.key-slot {
-    width: 40px;
-    height: 40px;
-    background: rgba(219, 171, 75, 0.2);
-    border: 2px solid rgba(219, 171, 75, 0.5);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    color: #DBAB4B;
-    text-transform: uppercase;
-}
-
-.key-slot.active {
-    background: rgba(219, 171, 75, 0.2);
-    color: #132952;
-}
-
-#remapBtm {
-    padding: 6px 16px;
-    font-size: 12px;
-    background: transparent;
-    border: 1px solid rgba(219, 171, 75, 0.5);
-    color: #DBAB4B;
-    border-radius: 16px;
-    cursor: pointer;
-}
-
-.key-hint {
-    font-size: 12px;
-    color: #666;
-}
-
-.key-hint span {
-    color: #DBAB4B
-}
-
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-}
-
-.modal.hidden {
-    display: none;
-}
-
-.modal-content {
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    padding: 24px;
-    border-radius: 12px;
-    border: 1px solid rgba(219, 171, 75, 0.5);
-    text-align: center;
-    max-width: 300px;
-}
-
-.modal-content h3 {
-    margin-bottom: 8px;
-    color: #DBAB4B;
-}
-
-.modal-content p {
-    color: #888;
-    margin-bottom: 16px;
-}
-
-.remap-lane {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px;
-    margin: 4px 0;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 6px;
-}
-
-.remap-lane.waiting {
-    border: 1px solid #DBAB4B;
-    background: rgba(219, 171, 75, 0.2);
-}
-
-.modal-content button {
-    margin: 8px; padding: 10px 24px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-#saveRemap {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: #fff;
-}
-
-.timing-info {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    padding: 8px 16px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 8px;
-    font-size: 11px;
-    color: #888
+#difficultySelector button {
+    min-width: 88px;
+    color: #bbb;
+    border-color: #666;
 }
