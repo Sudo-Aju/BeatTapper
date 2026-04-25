@@ -122,3 +122,173 @@ nav {
     color: #bbb;
     border-color: #666;
 }
+
+#btnStartSong {
+    margin-top: auto;
+}
+
+#game-container {
+    gap: 12px;
+    padding: 20px;
+}
+
+#hud {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #fff;
+    border-radius: 4px;
+}
+
+#hud > dib {
+    display: flex;
+    flex-direction: column;
+}
+
+#hud > div:last-child {
+    align-items: flex-end;
+}
+
+#hud small, #hp small, #resultsStats small {
+    font-size: 10px;
+    letter-spacing: 2px;
+}
+
+#score, #combo, #resultsStats > div > div {
+    font: 700 32px "Courier New", monospace;
+}
+
+#hp {
+    align-items: center;
+    gap: 6px;
+}
+
+#hp > div {
+    width: 100%;
+    height: 10px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    background: #111;
+    overflow: hidden;
+}
+
+#healthBar {
+    height: 100%;
+    width: 100%;
+    background: #fff;
+}
+
+
+#judgement {
+    height: 40px;
+    font: 00 28px Arial, sans-serif; opacity: 0;
+}
+
+#judgement:not(:empty) {
+    opacity: 1;
+}
+
+#gameCanvas {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    background: #111;
+    border: 1px solid #fff;
+    border-radius: 4px;
+}
+
+#controls {
+    align-items: center;
+    gap: 12px;
+    width: 100%
+}
+
+#keys > div {
+    width: 46px;
+    height: 46px;
+    border: 1px solid #666;
+    border-radius: 4px;
+    display: grid;
+    place-items: center;
+}
+
+#results-screen {
+    justify-content: center;
+    gap: 24px;
+}
+
+#resultsGrade {
+    font-size: 96px;
+    font-weight: 700;
+}
+
+#resultsStats, #counts, #resultsButton {
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+#resultsStats > div, #counts > div {
+    min-width: 88px;
+    padding: 12px 16px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    text-align: center;
+}
+
+#counts b {
+    display: block;
+    margin-bottom: 4px;
+}
+
+#counts span {
+    font: 700 24px "Courier New", monospace;
+}
+
+#pauseModel {
+    position: fixed;
+    inset: 0;
+    background: #000c;
+    display: grid;
+    place-items: center;
+}
+
+#pauseModal > div {
+    padding: 24px;
+    border: 1px solid #fff;
+    border-radius: 4px;
+    text-align: center;
+}
+
+#pauseModal button {
+    display: block;
+    width: 200px;
+    margin: 10px auto;
+}
+
+@media (max-width: 640px) {
+    section {
+        padding: 24px 16px;
+    }
+
+    h1 {
+        font-size: 44px;
+    }
+
+    #hud {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    #hud > div, #hud > div.last-child {
+        align-items: center;
+    }
+
+   #score, #combo, #resultsStats > div > div {
+    font-size: 28px;
+   }
+
+   #resultsGrade {
+    font-size: 72px;
+   }
+}

@@ -2,56 +2,124 @@
 <html>
     <head>
         <title>BeatTapper</title>
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet" href="styles.css?v=1">
     </head>
 <body>
-    <div class="game-container">
 
-        <div class="hud">
-            <div class="score-display">
-                <span class="label">SCORE</span>
-                <span id="score">000000</span>
+    <section id="main-menu">
+    <header>
+        <h1>GAME</h1>
+        <p>Press any key to start</p>
+    </header>
+    <nav>
+        <button id="btnPlay" class="p">Play</button>
+        <button id="btnSettings">Settings</button>
+        <button id=""btnCredits>Credits</button>
+    </nav>
+</section>
+
+<section id="song-select" hidden>
+    <div>
+        <h2>Select Song</h2>
+        <button id="btnBack">Back</button>
+    </div>
+    <div id="songsList"></div>
+    <div id="difficultySelector">
+        <button data-diff="easy">Easy</button>
+        <button data-diff="normal" class="a">Normal</button>
+        <button data-diff="hard">Hard</button>
+    </div>
+    <button id="btnStartSong" class="p">Start Game</button>
+    </section>
+    <section id="game-container" hidden>
+        <div id="hud">
+            <div>
+                <small>SCORE</small>
+                <div id="score">000000</div>
             </div>
-
-            <div class="status-display">
-                <span id="status">Press Play</span>
-            </div>
-
-            <div class="combo-display">
-                <span id="combo">0</span>
-                <span class="label">COMBO</span>
-            </div>
-
-            <div id="judgement" class="judgement"></div>
-        </div>
-
-        <div class="timing-info">
-            <div id="timingDisplay"></div>
-            <div>FPS: <span id="fpsDisplay">60</span></div>
-        </div>
-
-        <canvas id="gameCanvas"></canvas>
-
-        <div class="controls">
-            <button id="startBtn">Play</button>
-
-            <div class="key-config">
-                <span>Lane Keys:</span>
-                <div class="key-slots" id="keySlots">
-                    <div class="key-slot">A</div>
-                    <div class="key-slot">S</div>
-                    <div class="key-slot">D</div>
-                    <div class="key-slot">F</div>
+            <div id="hp">
+                <div>
+                    <div id="healthBar"></div>
+                </div>
+                <div id="hp">
+                    <div>
+                        <div id="healthBar"></div>
+                    </div>
+                    <small>HP</small>
+                </div>
+                <div>
+                    <div id="combo">0</div>
+                    <small>COMBO</small>
                 </div>
             </div>
 
-            <div class="key-hint">
-                Buffer: <span id="bufferSize">0</span>
+            <div id="judgement"></div>
+
+            <canvas id="gameCanvas"></canvas>
+
+            <div id="controls">
+                <button id="btnPause">Pause</button>
+                <div id="keys">
+                    <div data-lane="0">A</div>
+                    <div data-lane="1">S</div>
+                    <div data-lane="2">D</div>
+                    <div data-lane="3">F</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="results-screen" hidden>
+            <h2>Results</h2>
+            <div id="resultsGrade">A</div>
+            <div id="resultsStats">
+                <div>
+                    <small>SCORE</small>
+                    <div id="resultsScore">0</div>
+                </div>
+                <div>
+                    <small>ACCURACY</small>
+                    <div id="resultsAccuracy">0</div>
+                </div>
+                <div>
+                    <small>MAX COMBO</small>
+                    <div id="resultsCombo">0</div>
+                </div>
+            </div>
+            <div id="counts">
+                <div>
+                    <b>Perfect</b>
+                    <span id="countPerfect">0</span>
+                </div>
+                <div>
+                    <b>Perfect</b>
+                    <span id="countGreat">0</span>
+                </div>
+                <div>
+                    <b>Perfect</b>
+                    <span id="countGood">0</span>
+                </div>
+                <div>
+                    <b>Perfect</b>
+                    <span id="countMiss">0</span>
+                </div>
+            </div>
+            <div id="resultButtons">
+                <button id="btnRetry" class="p">Retry</button>
+                <button id="btnBackToMenu">Back To Menu</button>
+            </div>
+        </section>
+
+        <div id="pauseModal" hidden>
+            <div>
+                <h3>Paused</h3>
+                <button id="btnResume" class="p">Resume</button>
+                <button id="btnRestart">Restart</button>
+                <button id="btnQuite">Quit</button>
             </div>
         </div>
 
-    </div>
+        <script src="main.js?v=1"></script>
+        
 
-    <script type="module" src="main.js"></script>
 </body>
 </html>
