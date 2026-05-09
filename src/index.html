@@ -2,124 +2,94 @@
 <html>
     <head>
         <title>BeatTapper</title>
-        <link rel="stylesheet" href="styles.css?v=1">
+        <link rel="stylesheet" href="styles.css?v=2">
     </head>
 <body>
 
-    <section id="main-menu">
-    <header>
-        <h1>GAME</h1>
-        <p>Press any key to start</p>
-    </header>
-    <nav>
-        <button id="btnPlay" class="p">Play</button>
-        <button id="btnSettings">Settings</button>
-        <button id=""btnCredits>Credits</button>
-    </nav>
-</section>
-
-<section id="song-select" hidden>
-    <div>
-        <h2>Select Song</h2>
-        <button id="btnBack">Back</button>
-    </div>
-    <div id="songsList"></div>
-    <div id="difficultySelector">
-        <button data-diff="easy">Easy</button>
-        <button data-diff="normal" class="a">Normal</button>
-        <button data-diff="hard">Hard</button>
-    </div>
-    <button id="btnStartSong" class="p">Start Game</button>
+    <section id="main-menu" class="screen">
+        <button id="btnPlay" class="primary">Play</button>
+        <small id="creditsLabel">Built by Azmeer with love ❤️, UI inspired from <a href="https://github.com/DonChiaQE/win95">@DonChiaQE</a></small>
     </section>
-    <section id="game-container" hidden>
-        <div id="hud">
-            <div>
-                <small>SCORE</small>
-                <div id="score">000000</div>
+
+    <section id="song-select" class="screen" hidden>
+        
+        <div id="songsList" aria-label="Level selection"></div>
+    </section>
+    
+    <section id="game-container" class="screen" hidden> 
+        <div id="game-stage">
+            <div id="hud">
+                <small>Score</small>
+                <div id="score">00000000</div>
             </div>
-            <div id="hp">
-                <div>
-                    <div id="healthBar"></div>
-                </div>
-                <div id="hp">
-                    <div>
-                        <div id="healthBar"></div>
-                    </div>
-                    <small>HP</small>
-                </div>
-                <div>
+
+            <div id="playfield-shell">
+                <div id="comboWrap">
                     <div id="combo">0</div>
-                    <small>COMBO</small>
+                    <small>Combo</small>
                 </div>
-            </div>
 
-            <div id="judgement"></div>
+                <div id="lane-frame">
+                    <div id="lane-grid" aria-hidden="true">
+                        <div class="lane lane-1"></div>
+                        <div class="lane lane-2"></div>
+                        <div class="lane lane-3"></div>
+                        <div class="lane lane-4"></div>
+                    </div>
+                    <canvas id="gameCanvas"></canvas>
+                    <div id="judgement-line" aria-hidden="true"></div>
+                    <div id="judgement" aria-live="polite"></div>
+                </div>
 
-            <canvas id="gameCanvas"></canvas>
+                <div id="error-bar" aria-hidden="true">
+                    <div id="error-bar-labels">
+                        <span class="error-bar-label left">Early</span>
+                        <span class="error-bar-label left">Lane Monitor</span>
+                        <span class="error-bar-label left">Late</span>
+                    </div>
+                    <div id="error-lane-grid">
+                        <div class="error-lane lane-1" data-lane="0">
+                            <div class="error-lane-meter"></div>
+                        </div>
+                        <div class="error-lane lane-2" data-lane="1">
+                            <div class="error-lane-meter"></div>
+                        </div>
+                        <div class="error-lane lane-3" data-lane="2">
+                            <div class="error-lane-meter"></div>
+                        </div>
+                        <div class="error-lane lane-4" data-lane="3">
+                            <div class="error-lane-meter"></div>
+                        </div>
+                    </div>
+                    <div id="error-bar-center"></div>
+                    <div id="errorMarkers"></div>
+                </div>
 
-            <div id="controls">
-                <button id="btnPause">Pause</button>
-                <div id="keys">
-                    <div data-lane="0">A</div>
-                    <div data-lane="1">S</div>
-                    <div data-lane="2">D</div>
-                    <div data-lane="3">F</div>
+                <div id="keys" aria-hidden="true">
+                    <div class="key-slot lane-1" data-lane="0">A</div>
+                    <div class="key-slot lane-1" data-lane="1">S</div>
+                    <div class="key-slot lane-1" data-lane="2">D</div>
+                    <div class="key-slot lane-1" data-lane="3">F</div>
                 </div>
-            </div>
-        </section>
-
-        <section id="results-screen" hidden>
-            <h2>Results</h2>
-            <div id="resultsGrade">A</div>
-            <div id="resultsStats">
-                <div>
-                    <small>SCORE</small>
-                    <div id="resultsScore">0</div>
-                </div>
-                <div>
-                    <small>ACCURACY</small>
-                    <div id="resultsAccuracy">0</div>
-                </div>
-                <div>
-                    <small>MAX COMBO</small>
-                    <div id="resultsCombo">0</div>
-                </div>
-            </div>
-            <div id="counts">
-                <div>
-                    <b>Perfect</b>
-                    <span id="countPerfect">0</span>
-                </div>
-                <div>
-                    <b>Perfect</b>
-                    <span id="countGreat">0</span>
-                </div>
-                <div>
-                    <b>Perfect</b>
-                    <span id="countGood">0</span>
-                </div>
-                <div>
-                    <b>Perfect</b>
-                    <span id="countMiss">0</span>
-                </div>
-            </div>
-            <div id="resultButtons">
-                <button id="btnRetry" class="p">Retry</button>
-                <button id="btnBackToMenu">Back To Menu</button>
-            </div>
-        </section>
-
-        <div id="pauseModal" hidden>
-            <div>
-                <h3>Paused</h3>
-                <button id="btnResume" class="p">Resume</button>
-                <button id="btnRestart">Restart</button>
-                <button id="btnQuite">Quit</button>
             </div>
         </div>
+    </section>
 
-        <script src="main.js?v=1"></script>
-        
+    <section id="result-screen"  class="screen" hidden>
+        <div class="results-card">
+            <small>Results</small>
+            <div class="result-stat">
+                <span>Final Score</span>
+                <strong id="resultScore">0</strong>
+            </div>
+            <div class="result-stat">
+                <span>Max Combo</span>
+                <strong id="resultsCombo">0</strong>
+            </div>
+            <button id="btnBackToMenu" class="primary">Back To Menu</button>
+        </div>
+    </section>
 
+    <script src="main.js?v=2"></script>   
 </body>
 </html>
