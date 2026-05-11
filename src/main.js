@@ -8,6 +8,7 @@ const SETTINGS = {
   chordTimeTolerance: 0.0005,
   hitSnapTime: 0.055,
   hitAnimationTime: 0.22,
+  missFadeTime: 0.22,
   missExitTime: 0.5,
   laneFlashTime: 0.26,
   effectDurations: {
@@ -329,6 +330,11 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function easeOutSquared(progress) {
+  const clamped = clamp(progress, 0, 1);
+  return 1 - (1 - clamped) * (1 - clamped);
+}
+
 function rgba(rgb, alpha) {
   return `rgba(${rgb}, ${alpha})`;
 }
@@ -626,7 +632,7 @@ class BeatTapper {
         main: document.getElementById("main-menu"),
         select: document.getElementById("song-select"),
         game: document.getElementById("game-container"),
-        results: document.getElementById("results-screen"),
+        results: document.getElementById("result-screen"),
       },
       playButton: document.getElementById("btnPlay"),
       songList: document.getElementById("songsList"),
@@ -1369,7 +1375,7 @@ classifyOffset(offsetSeconds) {
 
     getTapRenderY(note, currentTime) {
       if (note.resolved && note.exitState === "hit") {
-        const animation = this.getTapAnimations(note, currentTime);
+        const animation = this.getTapAnimation(note, currentTime);
         const startY = note.hitOriginY == null ? this.getHitAnimationTop() : note.hitOriginY;
         const lineY = this.getHitAnimationTop();
         return startY + (lineY - startY) * animation.snapProgress;
