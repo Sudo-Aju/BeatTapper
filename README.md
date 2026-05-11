@@ -61,9 +61,9 @@ Score points for timing accuracy and keep the combo alive.
 
 ## Gallery
 
-| Gameplay | Hold Note | Judgement Feedback |
+| Gameplay | Main Menu | Levels |
 |----|---|---|
-| ![Gameplay Screenshot](assets/gallery/screenshot-1.png) | ![Intro](assets/gallery/screenshot-2) | ![Level](assets/gallery/screenshot-3.png) |
+| ![Gameplay Screenshot](https://github.com/Sudo-Aju/BeatTapper/blob/main/Assets/Gallery/screenshot-1.png) | ![Intro](https://github.com/Sudo-Aju/BeatTapper/blob/main/Assets/Gallery/screenshot-2.png) | ![Level](https://github.com/Sudo-Aju/BeatTapper/blob/main/Assets/Gallery/screenshot-3.png) |
 
 ---
 
