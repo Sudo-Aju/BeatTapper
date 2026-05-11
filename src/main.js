@@ -4,12 +4,11 @@ const SETTINGS = {
   hitLineOffset: 86,
   noteHeight: 26,
   noteWidthRatio: 0.72,
-  missWindowMs: 140,
   scorePad: 8,
   chordTimeTolerance: 0.0005,
   hitSnapTime: 0.055,
   hitAnimationTime: 0.22,
-  missFadeTime: 0.36,
+  missExitTime: 0.5,
   laneFlashTime: 0.26,
   effectDurations: {
     PERFECT: 260,
@@ -300,7 +299,7 @@ const CONFIG = [
     number: 4,
     bpm: 128,
     keepPattern: [1, 1, 1, 0, 1], 
-    holdPattern: [1, 0, 0, 1],
+    holdPattern: [1, 1, 0, 1],
     chordLimit: 3,
     holdDurationScale: 0.96,
     keepFirstGroups: 10,
@@ -318,7 +317,7 @@ const CONFIG = [
 
 const LEVELS = CONFIG.map((config) => ({
   id: `level-${config.number}`,
-  title: `level ${config.number}`,
+  title: `Level ${config.number}`,
   audioSpec: buildLevelAudioSpec(LEVEL_AUDIO_SPEC, config.bpm),
   beatmap:
     config.number === 5
@@ -353,7 +352,7 @@ function waveformSample(kind, frequency, time) {
 }
 
 function pseudoNoise(seed) {
-  const x = Math.sin(seed * 12.9898 + seed * 0.1234) * 43758.543123;
+  const x = Math.sin(seed * 12.9898 + seed * 0.1234) * 43758.5453123;
   return (x - Math.floor(x)) * 2 - 1;
 }
 
@@ -375,7 +374,7 @@ function renderSequenceVoice(time, bpm, pattern, stepsPerBeat, wave, mix, transp
 
   const localTime = time - stepIndex * stepDuration;
   const frequency = midiToFrequency(midi + transpose);
-  const amp = envelope(localTime, stepDuration * 0.8, stepDuration * 0.9);
+  const amp = envelope(localTime, stepDuration * 0.08, stepDuration * 0.9);
   return waveformSample(wave, frequency, time) * amp * mix;
 }
 
@@ -416,7 +415,7 @@ function renderSnare(time, sampleIndex, bpm, pattern) {
   }
 
   const tone = Math.sin(TAU * 180 * localTime) * Math.exp(-localTime * 18) * 0.25;
-  const burst = pseudoNoise(sampleIndex + beatIndex * 101) * Math.exp(-localTime * 84) * 0.55;
+  const burst = pseudoNoise(sampleIndex + beatIndex * 101) * Math.exp(-localTime * 34) * 0.55;
   return tone + burst;
 }
 
@@ -554,16 +553,12 @@ function annotateChords(notes) {
       end += 1;
     }
 
-    const chordNotes = notes.slice(start, end);
-    const lanes = chordNotes.map((note) => note.lane);
-    const minLane = Math.min(...lanes);
-    const maxLane = Math.max(...lanes);
+    const chordSize = end - start
+    
     
     for (let index = start; index < end; index++) {
       notes[index].chordGroup = groupId;
-      notes[index].chordSize = chordNotes.length;
-      notes[index].chordMinLane = minLane;
-      notes[index].chordMaxLane = maxLane;
+      notes[index].chordSize = chordSize;
     }
 
     groupId += 1;
@@ -585,17 +580,11 @@ function createMulticolorGradient(ctx, startX, endX, variant = "body", alpha = 1
   return gradient;
 }
 
-function easeOutSquared(value) {
-  const clamped = clamp(value, 0, 1);
-  return 1 - (1 - clamped) * (1 - clamped);
-}
-
 function cloneBeatmap(beatmap) {
   const notes = beatmap
-    .map((note, index) => {
+    .map((note) => {
       const duration = note.type === "hold" ? note.duration : 0;
       return {
-        id: index,
         lane: note.lane,
         type: note.type,
         time: note.time,
@@ -610,8 +599,6 @@ function cloneBeatmap(beatmap) {
         hitOriginY: null,
         chordGroup: -1,
         chordSize: 1,
-        chordMinLane: note.lane,
-        chordMaxLane: note.lane,
       };
     })
     .sort((a, b) => a.time - b.time || a.lane - b.lane);
@@ -639,7 +626,7 @@ class BeatTapper {
         main: document.getElementById("main-menu"),
         select: document.getElementById("song-select"),
         game: document.getElementById("game-container"),
-        results: document.getElementById("result-screen"),
+        results: document.getElementById("results-screen"),
       },
       playButton: document.getElementById("btnPlay"),
       songList: document.getElementById("songsList"),
@@ -828,15 +815,10 @@ class BeatTapper {
     this.clearErrorMarkers();
     this.showScreen("game");
     this.resizeCanvas();
-
-    audio.currentTime = 0;
-    try {
-      await audio.play();
-  } catch (error) {
-    console.error("Audio play failed", error);
-    throw error;
+    audio.currentTime = 0;    
+    await audio.play();    
   }
-}
+
 
 
   stopAudio() {
@@ -901,9 +883,9 @@ class BeatTapper {
     }
 
     if (note.type === "hold") {
-      this.resolveHoldHead (note, judgement, offset);
+      this.resolveHoldHead (note, judgement, offset, currentTime);
     } else {
-      this.resolveTap(note, judgement, offset);
+      this.resolveTap(note, judgement, offset, currentTime);
     }  
 }
 
@@ -933,7 +915,7 @@ onKeyUp(event) {
       currentTime < holdNote.endTime -JUDGEMENTS.MISS.windowMs / 1000
            ? "MISS"
            : this.classifyOffset(offset) || "MISS";
-  this.resolveHoldTail(holdNote, judgement, offset);
+  this.resolveHoldTail(holdNote, judgement, offset, currentTime);
 }
 
 releaseAllKeys() {
@@ -967,7 +949,7 @@ clearLaneFeedback() {
   this.state.laneFeedback = createLaneFeedbackState();
   this.refs.errorLanes.forEach((lane) => {
       lane.classList.remove("active", "holding", "flash");
-      lane.style.setProperty("--meter-scale", "0.12")
+      lane.style.setProperty("--meter-scale", "0.12");
       lane.style.setProperty("--meter-opacity", "0.18");
       delete lane.dataset.judgement;
   });
@@ -1016,7 +998,7 @@ renderErrorBar(currentTime) {
       laneElement.classList.toggle("active", active);
       laneElement.classList.toggle("holding", Boolean(holdNote));
       laneElement.classList.toggle("flash", flashActive);
-      laneElement.style.setProperty("--meter-scale", meterScale.toFixed(3))
+      laneElement.style.setProperty("--meter-scale", meterScale.toFixed(3));
       laneElement.style.setProperty("--meter-opacity", meterOpacity.toFixed(3));
 
       if (flashActive) {
@@ -1063,10 +1045,14 @@ classifyOffset(offsetSeconds) {
       }
     }
 
-    setNoteExitState(note, exitState) {
+    getCurrentTime() {
+      return this.state.audio ? this.state.audio.currentTime : 0;
+    }
+
+    setNoteExitState(note, exitState, atTime) {
       note.exitState = exitState;
       note.resolvedAt = this.state.audio ? this.state.audio.currentTime : note.time;
-      note.hitOriginY = exitState === "hit" ? this.timeToY(note.time, note.resolvedAt) : null;
+      note.hitOriginY = this.timeToY(note.time, note.resolvedAt);
     }
 
     resolveTap(note, judgement, offset) {
@@ -1178,7 +1164,7 @@ classifyOffset(offsetSeconds) {
         while (note) {
           if (note.type === "tap") {
             if (currentTime - note.time > JUDGEMENTS.MISS.windowMs / 1000) {
-              this.resolveTap(note, "MISS", currentTime - note.time);
+              this.resolveTap(note, "MISS", currentTime - note.time, currentTime);
               note = this.peekLaneNote(lane);
               continue;
             }
@@ -1187,7 +1173,7 @@ classifyOffset(offsetSeconds) {
 
           if (!note.headHit) {
             if (currentTime - note.time > JUDGEMENTS.MISS.windowMs / 1000) {
-              this.resolveHoldHead(note, "MISS", currentTime - note.time);
+              this.resolveHoldHead(note, "MISS", currentTime - note.time, currentTime);
               note = this.peekLaneNote(lane);
               continue;
             }
@@ -1197,7 +1183,7 @@ classifyOffset(offsetSeconds) {
           if(note.holding && currentTime >= note.endTime) {
             const offset = currentTime - note.endTime;
             const judgement = this.classifyOffset(offset) || "MISS";
-            this.resolveHoldTail(note, judgement, offset);
+            this.resolveHoldTail(note, judgement, offset, currentTime);
             note = this.peekLaneNote(lane);
             continue;
           }
@@ -1265,11 +1251,10 @@ classifyOffset(offsetSeconds) {
         );
       }
 
-      if (note.type === "hold") {
-        return currentTime > Math.max(note.endTime, note.resolvedAt) + SETTINGS.missFadeTime;
-      }
-
-      return currentTime > note.resolvedAt + SETTINGS.missFadeTime;
+     if (note.exitState === "miss") {
+      return currentTime > note.resolvedAt + SETTINGS.missExitTime;
+     }
+     return true;
     }
 
     shouldRender(note, currentTime) {
@@ -1281,7 +1266,8 @@ classifyOffset(offsetSeconds) {
         return note.endTime >= currentTime - 0.05;
       }
 
-      return note.time >= currentTime - 0.12 && note.time <= currentTime + SETTINGS.approachTime + 0.12;
+      const lateWindow = JUDGEMENTS.MISS.windowMs / 1000 + 0.04;
+      return note.time >= currentTime - lateWindow && note.time <= currentTime + SETTINGS.approachTime + 0.12;
     }
 
     collectVisibleNotes(currentTime) {
@@ -1383,12 +1369,20 @@ classifyOffset(offsetSeconds) {
 
     getTapRenderY(note, currentTime) {
       if (note.resolved && note.exitState === "hit") {
-        const animation = this.getTapAnimation(note, currentTime);
+        const animation = this.getTapAnimations(note, currentTime);
         const startY = note.hitOriginY == null ? this.getHitAnimationTop() : note.hitOriginY;
         const lineY = this.getHitAnimationTop();
         return startY + (lineY - startY) * animation.snapProgress;
       }
 
+      if (note.resolved && note.exitState === "miss") {
+        if (note.hitOriginY == null) {
+          note.hitOriginY = this.timeToY(
+            note.time, note.resolvedAt
+          );
+        }
+        return note.hitOriginY;
+      }
       return this.timeToY(note.time, currentTime);
     }
 
@@ -1467,7 +1461,7 @@ classifyOffset(offsetSeconds) {
       const { noteWidth, noteHeight, height } = this.metrics;
       const { alpha = 1, scaleX = 1, scaleY = 1, yOffset = 0, snapProgress = 1,} = animation;
       const renderY = y + yOffset;
-      if (alpha <= 0 || renderY > height || renderY + noteHeight < -noteHeight) {
+      if (alpha <= 0 || renderY > height + noteHeight * 2 || renderY + noteHeight < -noteHeight * 2) {
         return;
       }
 
@@ -1495,7 +1489,7 @@ classifyOffset(offsetSeconds) {
         ctx.shadowBlur = 0;
       }
 
-      const bevel = Math.max(3, Math.floor(noteHeight * 0.22));
+      const bevel = Math.max(4, Math.floor(noteHeight * 0.26));
         const outerInset = 0.5;
         const centerInset = bevel + 0.5;
         const centerWidth = Math.max(2, noteWidth - bevel * 2 - 1);

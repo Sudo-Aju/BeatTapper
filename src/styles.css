@@ -97,7 +97,7 @@ section {
     animation: screen-fade 180ms steps(1, end);
 }
 
-#main-menu, #song-select {
+#main-menu, #song-select, #game-container {
     width: min(100%, 420px);
     min-height: auto;
     margin: 0;
@@ -106,8 +106,11 @@ section {
     border: 2px solid var(--panel-light);
     border-right-color: var(--panel-deep);
     border-bottom-color: var(--panel-deep);
-
 }
+
+#game-container {
+    width: min(100%, 560px);
+}   
 
 #main-menu, #song-select, #game-container, #results-screen {
     position: absolute;
@@ -116,31 +119,117 @@ section {
     transform: translate(-50%, -50%);
 }
 
-#main-menu::before, #song-select::before {
-    display: block;
+.window-title {
     width: calc(100% + 24px);
+    min-height: 20px;
     margin: -12px -12px 12px;
-    padding: 4px 6px;
+    padding: 2px 3px 2px 6px;
     background: #000080;
     color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     font-weight: 700;
     line-height: 1;
 }
 
-#main-menu::before {
-    content: "BeatTapper"
+.window-title span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-#song-select::before {
-    content: "Select Level";
+.window-buttons {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: 0 0 auto;
 }
+
+.window-button {
+    position: relative;
+    width: 18px;
+    height: 16px;
+    min-width: 0;
+    padding: 0;
+    background: var(--panel);
+    color: var(--text);
+    border: 2px solid var(--panel-light);
+    border-right-color: var(--panel-deep);
+    border-bottom-color: var(--panel-deep);
+    overflow: hidden;
+    line-height: 1;
+}
+
+.window-button::before, .window-button::after {
+    content: "";
+    position: absolute;
+    background: #000000;
+    pointer-events: none;
+}
+
+.window-button.is-min::before {
+    left: 50%;
+    top: 50%;
+    width: 8px;
+    height: 2px;
+    transform: translate(-50%, -50%);
+}
+
+.window-button.is-max::before {
+    left: 50%;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    background: transparent;
+    border: 2px solid #000000;
+    box-sizing: border-box;
+    transform: translate(-50%, -50%);
+}
+
+.window-button.is-close::before, .window-button.is-close::after {
+    left: 50%;
+    top: 50%;
+    width: 10px;
+    height: 2px;
+    transform-origin: center;
+}
+
+.window-button.is-close::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.window-button.is-close::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.window-button:hover {
+    background: #d4d0c8;
+}
+
+.window-button:focus-visible {
+    outline: 1px dotted #000000;
+    outline-offset: -4px;
+}
+
+.window-button:active {
+    padding: 0;
+    transform: translate(2px, 2px);
+    border-top-color: var(--panel-deep);
+    border-left-color: var(--panel-deep);
+    border-right-color: var(--panel-light);
+    border-bottom-color: var(--panel-light);
+    box-shadow: inset 1px 1px 0 var(--panel-dark);
+}
+
 
 #main-menu {
     gap: 12px;
 }
 #main-menu .primary {
     width: 100%;
-    font: 18px; 
+    font-size: 18px; 
 }
 
 #creditsLabel {
@@ -154,7 +243,7 @@ section {
 #songsList {
     width: 100%;
     display: grid;
-    gap: 8px
+    gap: 8px;
 }
 
 #songsList button {
@@ -278,6 +367,18 @@ section {
     overflow: hidden;
 }
 
+#lane-frame::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(var(--judgement-line-offset) + 8px);
+    z-index: 4;
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(15, 15, 15, 0) 0%, rgba(8, 8, 8, 0.28) 42%, rgba(0, 0, 0, 0.82) 78%, #000000 100%);
+}
+
 #lane-grid, #gameCanvas, #judgement-line, #judgement {
     position: absolute;
     inset: 0;
@@ -352,7 +453,7 @@ section {
 }
 
 #judgement.show {
-    animation: judgement-pop 240ms linear;
+    animation: judgement-pop 240ms linear forwards;
 }
 
 #judgement[data-judgement="PERFECT"] {
@@ -602,7 +703,7 @@ section {
     color: var(--text);
     background: var(--panel);
     box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 var(--panel-dark);
-    transition: transform 50ms linear, background 50ms linear, color 50ms, box-shadow 50ms linear;
+    transition: transform 50ms linear, background 50ms linear, color 50ms linear, box-shadow 50ms linear;
 }
 
 .key-slot + .key-slot {
@@ -610,7 +711,7 @@ section {
 }
 
 .key-slot::before {
-    content: " ";
+    content: "";
     position: absolute;
     inset: 0;
     pointer-events: none;
@@ -630,10 +731,10 @@ section {
 }
 
 .key-slot.lane-4::before {
-    background: rgba(215, 75, 255, 0.18)
+    background: rgba(215, 75, 255, 0.18);
 }
 
-.key-slot-active {
+.key-slot.active {
     transform: translate(1px, 1px);
     box-shadow: inset 1px 1px 0 var(--panel-dark), inset -1px -1px 0 #ffffff;
 }
@@ -648,9 +749,9 @@ section {
     color: #0c6377;
 }
 
-.key-slot.lane-4.active {
-    background: #d9b8ef;
-    color: #6f2790;
+.key-slot.lane-3.active {
+    background: #efbad8;
+    color: #8f2358;
 }
 
 .key-slot.lane-4.active {
@@ -678,12 +779,8 @@ section {
     gap: 10px;
 }
 
-.results-card > small {
+.results-card > .window-title {
     margin: -12px -12px 0;
-    padding: 4px 6px;
-    background: #000080;
-    color: #ffffff;
-    font-weight: 700;
 }
 
 .result-stat {
@@ -727,7 +824,7 @@ section {
     }
 
     100% {
-        opactiy: 0;
+        opacity: 0;
         transform: translateY(-10px);
     }
 }
@@ -748,7 +845,7 @@ section {
 
 @keyframes error-fade {
     0% {
-        opactiy: 1; transform: translateY(0);
+        opacity: 1; transform: translateY(0);
     }
 
     100% {
@@ -763,11 +860,11 @@ section {
     }
 
     section {
-        padding: 24px 16px;
+        padding: 16px 12px 20px;
     }
 
     #hud, #playfield-shell {
-        width: min(100%, 380px)
+        width: min(100%, 380px);
     }
 
     #score {

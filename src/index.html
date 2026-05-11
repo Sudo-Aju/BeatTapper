@@ -2,20 +2,44 @@
 <html>
     <head>
         <title>BeatTapper</title>
-        <link rel="stylesheet" href="styles.css?v=6">
+        <link rel="stylesheet" href="styles.css?v=9">
     </head>
 <body>
 
     <section id="main-menu" class="screen">
+        <div class="window-title">
+            <span>BeatTapper</span>
+            <div class="window-buttons" aria-label="Window controls">
+                <button type="button" class="window-button is-min" aria-label="Mninimize"></button>
+                <button type="button" class="window-button is-max" aria-label="Maximize"></button>
+                <button type="button" class="window-button is-close" aria-label="Close"></button>
+            </div>
+        </div>
         <button id="btnPlay" class="primary">Play</button>
         <small id="creditsLabel">Built by Azmeer with love ❤️, UI inspired from <a href="https://github.com/DonChiaQE/win95">@DonChiaQE</a></small>
     </section>
 
     <section id="song-select" class="screen" hidden>
+        <div class="window-title">
+            <span>Select Level</span>
+            <div class="window-buttons" aria-label="Window controls">
+                <button type="button" class="window-button is-min" aria-label="Minimize"></button>
+                <button type="button" class="window-button is-max" aria-label="Maximize"></button>
+                <button type="button" class="window-button is-close" aria-label="Close"></button>
+            </div>
+        </div>
         <div id="songsList" aria-label="Level selection"></div>
     </section>
     
     <section id="game-container" class="screen" hidden> 
+        <div class="window-title">
+            <span>BeatTapper</span>
+            <div class="window-buttons" aria-label="Window controls">
+                <button type="button" class="window-button is-min" aria-label="Minimize"></button>
+                <button type="button" class="window-button is-max" aria-label="Maximize"></button>
+                <button type="button" class="window-button is-close" aria-label="Close"></button>
+            </div>
+        </div>
         <div id="game-stage">
             <div id="hud">
                 <small>Score</small>
@@ -76,6 +100,14 @@
 
     <section id="result-screen"  class="screen" hidden>
         <div class="results-card">
+            <div class="window-title">
+                <span>Results</span>
+                <div class="window-buttons" aria-label="Window controls">
+                    <button type="button" class="window-button is-min" aria-label="Minimize"></button>
+                    <button type="button" class="window-button is-max" aria-label="Maximize"></button>
+                    <button type="button" class="window-button is-close" aria-label="Close"></button>
+                </div>
+            </div>
             <small>Results</small>
             <div class="result-stat">
                 <span>Final Score</span>
@@ -89,6 +121,6 @@
         </div>
     </section>
 
-    <script src="main.js?v=3"></script>   
+    <script src="main.js?v=4"></script>   
 </body>
 </html>
