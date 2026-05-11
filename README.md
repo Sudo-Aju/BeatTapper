@@ -1,6 +1,6 @@
 # BeatTapper Game
 
-![BeatTapper Logo](assets/logo.png)
+![BeatTapper Logo](assets/logo1.png)
 
 > A fast, retro themed rhythm arcade game built with vanilla JavaScript and HTML5 Canvas.
 
