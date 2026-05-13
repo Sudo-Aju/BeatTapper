@@ -112,7 +112,7 @@ section {
     width: min(100%, 560px);
 }   
 
-#main-menu, #song-select, #game-container, #results-screen {
+#main-menu, #song-select, #game-container, #result-screen {
     position: absolute;
     top: 50%;
     left: 50%;

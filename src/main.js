@@ -8,7 +8,6 @@ const SETTINGS = {
   chordTimeTolerance: 0.0005,
   hitSnapTime: 0.055,
   hitAnimationTime: 0.22,
-  missFadeTime: 0.22,
   missExitTime: 0.5,
   laneFlashTime: 0.26,
   effectDurations: {
@@ -330,11 +329,6 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
-function easeOutSquared(progress) {
-  const clamped = clamp(progress, 0, 1);
-  return 1 - (1 - clamped) * (1 - clamped);
-}
-
 function rgba(rgb, alpha) {
   return `rgba(${rgb}, ${alpha})`;
 }
@@ -599,6 +593,7 @@ function cloneBeatmap(beatmap) {
         resolved: false,
         counted: false,
         headHit: false,
+        headHitAt: -1,
         holding: false,
         resolvedAt: -1,
         exitState: null,
@@ -820,7 +815,17 @@ class BeatTapper {
     this.clearJudgement();
     this.clearErrorMarkers();
     this.showScreen("game");
-    this.resizeCanvas();
+    
+    // Ensure canvas is properly sized before starting
+    let resizeAttempts = 0;
+    while (resizeAttempts < 20) {
+      if (this.resizeCanvas() && this.metrics.pixelsPerSecond > 0) {
+        break;
+      }
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      resizeAttempts++;
+    }
+    
     audio.currentTime = 0;    
     await audio.play();    
   }
@@ -1055,39 +1060,43 @@ classifyOffset(offsetSeconds) {
       return this.state.audio ? this.state.audio.currentTime : 0;
     }
 
-    setNoteExitState(note, exitState, atTime) {
+    setNoteExitState(note, exitState, atTime, visualTime = note.time) {
       note.exitState = exitState;
-      note.resolvedAt = this.state.audio ? this.state.audio.currentTime : note.time;
-      note.hitOriginY = this.timeToY(note.time, note.resolvedAt);
+      note.resolvedAt = atTime;
+      note.hitOriginY = exitState === "hit"
+        ? this.timeToY(visualTime, note.resolvedAt)
+        : null;
     }
 
-    resolveTap(note, judgement, offset) {
+    resolveTap(note, judgement, offset, currentTime = this.getCurrentTime()) {
       note.resolved = true;
-      this.setNoteExitState(note, judgement === "MISS" ? "miss" : "hit");
+      this.setNoteExitState(note, judgement === "MISS" ? "miss" : "hit", currentTime);
       this.markResolved(note);
       this.registerJudgement(judgement, offset, note.lane);
       this.peekLaneNote(note.lane);
+      
     }
 
-    resolveHoldHead(note, judgement, offset) {
+    resolveHoldHead(note, judgement, offset, currentTime = this.getCurrentTime()) {
       if(judgement === "MISS") {
         note.resolved = true;
-        this.setNoteExitState(note, "miss");
+        this.setNoteExitState(note, "miss", currentTime);
         this.markResolved(note);
         this.registerJudgement("MISS", offset, note.lane);
         this.peekLaneNote(note.lane);
         return;
       }
       note.headHit = true;
+      note.headHitAt = currentTime;
       note.holding = true;
       this.state.activeHolds[note.lane] = note;
       this.registerJudgement(judgement, offset, note.lane);
     }
 
-    resolveHoldTail(note, judgement, offset) {
+    resolveHoldTail(note, judgement, offset, currentTime = this.getCurrentTime()) {
       note.holding = false;
       note.resolved = true;
-      this.setNoteExitState(note, judgement === "MISS" ? "miss" : "hit");
+      this.setNoteExitState(note, judgement === "MISS" ? "miss" : "hit", currentTime, note.endTime);
       this.state.activeHolds[note.lane] = null;
       this.markResolved(note);
       this.registerJudgement(judgement, offset, note.lane);
@@ -1178,6 +1187,15 @@ classifyOffset(offsetSeconds) {
           }
 
           if (!note.headHit) {
+            if (this.state.laneActive[lane]) {
+              const offset = currentTime - note.time;
+              const judgement = this.classifyOffset(offset);
+              if (judgement && judgement !== "MISS") {
+                this.resolveHoldHead(note, judgement, offset, currentTime);
+                break;
+              }
+            }
+
             if (currentTime - note.time > JUDGEMENTS.MISS.windowMs / 1000) {
               this.resolveHoldHead(note, "MISS", currentTime - note.time, currentTime);
               note = this.peekLaneNote(lane);
@@ -1250,7 +1268,9 @@ classifyOffset(offsetSeconds) {
 
       if (note.exitState === "hit") {
         if (note.type === "hold") {
-          return true;
+          return (
+            currentTime > note.resolvedAt + SETTINGS.hitSnapTime + SETTINGS.hitAnimationTime
+          );
         }
         return (
           currentTime > note.resolvedAt + SETTINGS.hitSnapTime + SETTINGS.hitAnimationTime
@@ -1258,7 +1278,7 @@ classifyOffset(offsetSeconds) {
       }
 
      if (note.exitState === "miss") {
-      return currentTime > note.resolvedAt + SETTINGS.missExitTime;
+      return false;
      }
      return true;
     }
@@ -1273,7 +1293,7 @@ classifyOffset(offsetSeconds) {
       }
 
       const lateWindow = JUDGEMENTS.MISS.windowMs / 1000 + 0.04;
-      return note.time >= currentTime - lateWindow && note.time <= currentTime + SETTINGS.approachTime + 0.12;
+      return note.time >= currentTime - lateWindow && note.time <= currentTime + SETTINGS.approachTime + 0.35;
     }
 
     collectVisibleNotes(currentTime) {
@@ -1285,7 +1305,7 @@ classifyOffset(offsetSeconds) {
       }
 
       const visible = [];
-      const renderLimit = currentTime + SETTINGS.approachTime + 0.12;
+      const renderLimit = currentTime + SETTINGS.approachTime + 0.35;
 
       for(let index = this.state.renderStartIndex; index < this.state.notes.length; index++) {
         const note = this.state.notes[index];
@@ -1353,24 +1373,9 @@ classifyOffset(offsetSeconds) {
           yOffset: 0, progress: popProgress, snapProgress,
         };
       }
-
-      const progress = clamp(
-        (currentTime - note.resolvedAt) / SETTINGS.missFadeTime, 0, 1
-      );
-      const fade = 1 - easeOutSquared(progress);
       return {
-        alpha: fade, scaleX: 1, scaleY: 1, yOffset: 0, progress, snapProgress: 1,
+        alpha: 1, scaleX: 1, scaleY: 1, yOffset: 0, progress: 1, snapProgress: 1,
       };
-    }
-    getHoldAlpha(note, currentTime) {
-      if (!note.resolved || note.exitState !== "miss") {
-        return 1;
-      }
-
-      const progress = clamp(
-        (currentTime - note.resolvedAt) / SETTINGS.missFadeTime, 0, 1,
-      );
-      return 1 - easeOutSquared(progress);
     }
 
     getTapRenderY(note, currentTime) {
@@ -1381,15 +1386,26 @@ classifyOffset(offsetSeconds) {
         return startY + (lineY - startY) * animation.snapProgress;
       }
 
-      if (note.resolved && note.exitState === "miss") {
-        if (note.hitOriginY == null) {
-          note.hitOriginY = this.timeToY(
-            note.time, note.resolvedAt
-          );
-        }
-        return note.hitOriginY;
-      }
       return this.timeToY(note.time, currentTime);
+    }
+
+    getHoldHeadAnimation(note, currentTime) {
+      if (!note.headHit || note.headHitAt < 0) {
+        return {
+          alpha: 1, scaleX: 1, scaleY: 1, yOffset: 0, snapProgress: 0,
+        };
+      }
+
+      const elapsed = Math.max(0, currentTime - note.headHitAt);
+      const popProgress = clamp(elapsed / SETTINGS.hitAnimationTime, 0, 1);
+      return {
+        alpha: 1 - popProgress * 0.9,
+        scaleX: 1 + popProgress * 0.72,
+        scaleY: Math.max(0.18, 1 - popProgress * 0.72),
+        yOffset: 0,
+        progress: popProgress,
+        snapProgress: 1,
+      };
     }
 
     drawChordConnectors(visibleNotes, currentTime) {
@@ -1423,7 +1439,7 @@ classifyOffset(offsetSeconds) {
 
         for (let index = 0; index < ordered.length; index++) {
           const note = ordered[index];
-          const animation = note.type === "tap" ? this.getTapAnimation(note, currentTime) : { alpha: this.getHoldAlpha(note, currentTime), yOffset:0 };
+          const animation = note.type === "tap" ? this.getTapAnimation(note, currentTime) : { alpha: 1, yOffset: 0 };
           alphaSum += animation.alpha;
           ySum += lockToHitLine ? this.metrics.hitLineY : this.getTapRenderY(note, currentTime) + animation.yOffset + noteHeight * 0.5;
         }
@@ -1474,13 +1490,13 @@ classifyOffset(offsetSeconds) {
       const palette = LANE_PALETTES[note.lane];
       const isChord = note.chordSize > 1;
       const isHitGhost = note.resolved && note.exitState === "hit";
-      const isMissGhost = note.resolved && note.exitState === "miss";
       const centerX = x + noteWidth * 0.5;
       const centerY = renderY + noteHeight * 0.5;
-      const bodyAlpha = isMissGhost ? 0.42 : 0.92;
-      const glowAlpha = isMissGhost ? 0.15 : 0.54;
-      const baseAlpha = isMissGhost ? 0.28 : 0.82;
-      const strokeAlpha = isMissGhost ? 0.18 : 0.95;
+      const bodyAlpha = 0.92;
+      const glowAlpha = 0.54;
+      const baseAlpha = 0.82;
+      const strokeAlpha = 0.95;
+      const outerInset = 0.5;
 
       ctx.save();
       ctx.globalAlpha = alpha;
@@ -1490,19 +1506,17 @@ classifyOffset(offsetSeconds) {
 
       if (isHitGhost && snapProgress >= 1) {
         const flareAlpha = Math.min(1, alpha + 0.12);
-        ctx.fillStyle = isChord ? createMulticolorGradient(ctx, x - 16, x + noteWidth + 16, "glow", flareAlpha * 0.32) : rgba(palette.glow, flareAlpha * 0.42);
-      } else if (isMissGhost) {
-        ctx.shadowBlur = 0;
+        ctx.fillStyle = isChord ? createMulticolorGradient(ctx, x - 16, x + noteWidth + 16, "glow", flareAlpha * 0.32) : rgba(palette.glow, flareAlpha * 0.34);
+      ctx.fillRect(x - 10, renderY + noteHeight * 0.22, noteWidth + 20, noteHeight * 0.56);
+      ctx.shadowBlur = 22;
+      ctx.shadowColor = isChord ? rgba("210, 236, 255", flareAlpha * 0.4) : rgba(palette.glow, flareAlpha * 0.42)
       }
 
-      const bevel = Math.max(4, Math.floor(noteHeight * 0.26));
-        const outerInset = 0.5;
+      if (isChord) {
+        const bevel = Math.max(3, Math.floor(noteHeight * 0.22));
         const centerInset = bevel + 0.5;
         const centerWidth = Math.max(2, noteWidth - bevel * 2 - 1);
-        const centerHeight = Math.max(2, noteHeight - bevel * 2 - 1);
-
-      if (isChord) {
-        
+        const centerHeight = Math.max(2, noteHeight - bevel * 2 -1);
 
         ctx.fillStyle = rgba("34, 34, 34", baseAlpha);
         ctx.fillRect(x, renderY, noteWidth, noteHeight);
@@ -1512,7 +1526,7 @@ classifyOffset(offsetSeconds) {
         ctx.fillRect(x + 1, renderY + 1, bevel, noteHeight - bevel);
 
         ctx.fillStyle = rgba("106, 106, 106", Math.min(0.96, bodyAlpha + 0.04));
-        ctx.fillRect(x + 1, renderY + noteHeight - bevel, bevel - 1, bevel - 1);
+        ctx.fillRect(x + noteWidth - bevel, renderY + 1, bevel - 1, noteHeight -1);
         ctx.fillRect(x + 1, renderY + noteHeight - bevel, noteWidth - 1, bevel - 1);
         ctx.fillStyle = createMulticolorGradient(
           ctx, x + centerInset, x + noteWidth - centerInset, "body", bodyAlpha,
@@ -1523,20 +1537,57 @@ classifyOffset(offsetSeconds) {
           ctx, x + centerInset, x + noteWidth - centerInset, "glow", glowAlpha,
         );
         ctx.fillRect(x + centerInset, renderY + centerInset, centerWidth, Math.max(2, centerHeight * 0.34));
-      
+        ctx.strokeStyle = rgba("0, 0, 0", strokeAlpha);
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + outerInset, renderY + outerInset, noteWidth - 1, noteHeight - 1);
+        ctx.strokeStyle = rgba("255, 255, 255", Math.min(0.86, strokeAlpha));
+        ctx.beginPath();
+        ctx.moveTo(x + 1.5, renderY + noteHeight - 1.5);
+        ctx.lineTo(x + 1.5, renderY + 1.5);
+        ctx.lineTo(x + noteWidth - 1.5, renderY + 1.5);
+        ctx.stroke();
+        ctx.strokeStyle = rgba("28, 28, 28", Math.min(0.9, strokeAlpha));
+        ctx.beginPath();
+        ctx.moveTo(x + noteWidth - 1.5, renderY + 1.5);
+        ctx.lineTo(x + noteWidth - 1.5, renderY + noteHeight - 1.5);
+        ctx.lineTo(x + 1.5, renderY + noteHeight - 1.5);
+        ctx.stroke();
     }
       else {
-        ctx.fillStyle = rgba(palette.body, bodyAlpha);
+        const bevel = Math.max(4, Math.floor(noteHeight * 0.26));
+        const centerInset = bevel + 0.5;
+        const centerWidth = Math.max(2, noteWidth - bevel * 2 - 1);
+        const centerHeight = Math.max(2, noteHeight - bevel * 2 - 1);
+    
+        ctx.fillStyle = rgba("22, 22, 22", baseAlpha);
         ctx.fillRect(x, renderY, noteWidth, noteHeight);
-        ctx.fillStyle = rgba(palette.glow, glowAlpha);
-        ctx.fillRect(x + 4, renderY + 4, noteWidth - 8, Math.max(2, noteHeight * 0.34));
+
+        ctx.fillStyle = rgba(palette.glow, Math.min(0.98, bodyAlpha + 0.12));
+        ctx.fillRect(x + 1, renderY + 1, noteWidth - bevel, bevel);
+        ctx.fillRect(x + 1, renderY + 1, bevel, noteHeight - bevel);
+
+        ctx.fillStyle = rgba("78, 78, 78", Math.min(0.96, bodyAlpha + 0.08));
+            ctx.fillRect(x + noteWidth - bevel, renderY + 1, bevel - 1, noteHeight - 1);
+            ctx.fillRect(x + 1, renderY + noteHeight - bevel, noteWidth - 1, bevel - 1);
+            ctx.fillStyle = rgba(palette.body, bodyAlpha);
+            ctx.fillRect(x + centerInset, renderY + centerInset, centerWidth, centerHeight);
+            ctx.fillStyle = rgba(palette.glow, Math.min(0.92, glowAlpha + 0.1));
+            ctx.fillRect( x + centerInset, renderY + centerInset, centerWidth, Math.max(2, centerHeight * 0.36),
+            );
+            ctx.fillStyle = rgba(palette.body, Math.min(0.96, baseAlpha + 0.08));
+            ctx.fillRect(
+                x + centerInset + 1,
+                renderY + centerInset + Math.max(2, centerHeight * 0.36),
+                Math.max(1, centerWidth - 2),
+                Math.max(2, centerHeight * 0.64 - 1),
+            );
       
     }
     
       ctx.strokeStyle = rgba("0, 0, 0", strokeAlpha);
       ctx.lineWidth = 1;
       ctx.strokeRect(x + outerInset, renderY + outerInset, noteWidth - 1, noteHeight - 1);
-      ctx.strokeStyle = rgba("255, 255, 255", Math.min(0.86, strokeAlpha));
+      ctx.strokeStyle = rgba("255, 255, 255", Math.min(0.88, strokeAlpha));
       ctx.beginPath();
       ctx.moveTo(x + 1.5, renderY + noteHeight - 1.5);
       ctx.lineTo(x + 1.5, renderY + 1.5);
@@ -1556,38 +1607,63 @@ classifyOffset(offsetSeconds) {
       const ctx = this.ctx;
       const { width, noteWidth, noteHeight, hitLineY, height } = this.metrics;
       const palette = LANE_PALETTES[note.lane];
-      const alpha = this.getHoldAlpha(note, currentTime);
-      const isMissGhost = note.resolved && note.exitState === "miss";
-      if (alpha <= 0) { return; }
+      if (note.resolved && note.exitState === "hit") {
+        this.drawTapNote(
+          note,
+          x,
+          this.getTapRenderY(note, currentTime),
+          this.getTapAnimation(note, currentTime),
+        );
+        return;
+      }
+
       const headTop = this.timeToY(note.time, currentTime);
       const tailTop = this.timeToY(note.endTime, currentTime);
       if (tailTop > height + noteHeight || headTop < -noteHeight * 2) { return; }
       const bodyTop = tailTop + noteHeight * 0.44;
       const bodyBottom = headTop + noteHeight * 0.56;
       const bodyHeight = bodyBottom - bodyTop;
-      const clipAtLine = note.headHit && (!note.resolved || note.exitState !== "miss");
-      if (clipAtLine) { ctx.save(); ctx.beginPath(); ctx.rect(0, 0, width, hitLineY); ctx.clip();
+      const clipAtLine = note.headHit && !note.resolved;
+
+      if (clipAtLine) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, width, hitLineY);
+        ctx.clip();
       }
 
       if (bodyHeight > 0) {
-        ctx.fillStyle = note.chordSize > 1 ? createMulticolorGradient( ctx, x + noteWidth * 0.18, x + noteWidth * 0.82, "body", isMissGhost ? alpha * 0.22 : alpha * (note.headHit ? 0.32 : 0.24),
-      ) : rgba(palette.body, isMissGhost ? alpha * 0.22 : alpha * (note.headHit ? 0.32 : 0.24));
-      ctx.fillRect(x + noteWidth * 0.18, bodyTop, noteWidth * 0.64, bodyHeight);
-      ctx.fillStyle = note.chordSize > 1 ? createMulticolorGradient( ctx, x + noteWidth * 0.24, x + noteWidth * 0.76, "glow", isMissGhost ? alpha * 0.14 : alpha * (note.headHit ? 0.22 : 0.12),
-    ) : rgba(palette.glow, isMissGhost ? alpha * 0.14 : alpha * (note.headHit ? 0.22 : 0.12));
-    ctx.fillRect(x + noteWidth * 0.24, bodyTop, noteWidth * 0.52, bodyHeight);
+        const bodyAlpha = note.headHit ? 0.32 : 0.24;
+        const glowAlpha = note.headHit ? 0.22 : 0.12;
+        ctx.fillStyle = note.chordSize > 1 ? createMulticolorGradient( ctx, x + noteWidth * 0.18, x + noteWidth * 0.82, "body", bodyAlpha,) : rgba(palette.body, bodyAlpha);
+        ctx.fillRect(x + noteWidth * 0.18, bodyTop, noteWidth * 0.64, bodyHeight);
+        ctx.fillStyle = note.chordSize > 1 ? createMulticolorGradient(
+                          ctx, x + noteWidth * 0.24, x + noteWidth * 0.76, "glow", glowAlpha,) : rgba(palette.glow, glowAlpha);
+        ctx.fillRect(x + noteWidth * 0.24, bodyTop, noteWidth * 0.52, bodyHeight);
       }
-      this.drawTapNote(note, x, tailTop, { alpha });
-      this.drawTapNote(note, x, headTop, { alpha });
+
+      this.drawTapNote(note, x, tailTop);
 
       if (clipAtLine) {
         ctx.restore();
-        ctx.fillStyle = note.chordSize > 1 ? createMulticolorGradient(ctx, x - 1, x + noteWidth + 1, "glow", 0.22) : rgba(palette.glow, 0.22);
+        ctx.fillStyle = note.chordSize > 1
+          ? createMulticolorGradient(ctx, x - 1, x + noteWidth + 1, "glow", 0.24)
+          : rgba(palette.glow, 0.24);
         ctx.fillRect(x - 1, hitLineY - 3, noteWidth + 2, 6);
-        ctx.fillStyle = note.chordSize > 1 ? createMulticolorGradient( ctx, x + noteWidth * 0.16, x + noteWidth * 0.84, "body", 0.16,
-        ) : rgba(palette.body, 0.16);
-        ctx.fillRect(x + noteWidth * 0.16, hitLineY - noteHeight * 0.28, noteWidth * 0.68, noteHeight * 0.28);
+        ctx.fillStyle = note.chordSize > 1
+          ? createMulticolorGradient(ctx, x + noteWidth * 0.16, x + noteWidth * 0.84, "body", 0.18)
+          : rgba(palette.body, 0.18);
+        ctx.fillRect(x + noteWidth * 0.16, hitLineY - noteHeight * 0.32, noteWidth * 0.68, noteHeight * 0.32);
+        this.drawTapNote(
+          { ...note, resolved: true, exitState: "hit" },
+          x,
+          this.getHitAnimationTop(),
+          this.getHoldHeadAnimation(note, currentTime),
+        );
+        return;
       }
+
+      this.drawTapNote(note, x, headTop);
     }
 
     drawHitEffect() {
@@ -1621,7 +1697,7 @@ classifyOffset(offsetSeconds) {
 
     resizeCanvas() {
       const rect = this.refs.laneFrame.getBoundingClientRect();
-      if (!rect.width || !rect.height) { return; }
+      if (!rect.width || !rect.height) { return false; }
     
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.metrics.dpr = dpr;
@@ -1631,12 +1707,13 @@ classifyOffset(offsetSeconds) {
     this.metrics.noteWidth = this.metrics.laneWidth * SETTINGS.noteWidthRatio;
     this.metrics.noteHeight = SETTINGS.noteHeight;
     this.metrics.hitLineY = this.metrics.height - SETTINGS.hitLineOffset;
-    this.metrics.pixelsPerSecond = (this.metrics.hitLineY + this.metrics.noteHeight + 28) / SETTINGS.approachTime;
+    this.metrics.pixelsPerSecond = (this.metrics.hitLineY + this.metrics.noteHeight) / SETTINGS.approachTime;
     this.refs.canvas.width = this.metrics.width * dpr;
     this.refs.canvas.height = this.metrics.height * dpr;
     this.refs.canvas.style.width = `${this.metrics.width}px`;
     this.refs.canvas.style.height = `${this.metrics.height}px`;
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return true;
   }
 }
 
