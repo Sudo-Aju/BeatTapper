@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeatTapper — README</title>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red:    #e35f5f;
+    --blue:   #394dcd;
+    --teal:   #208c71;
+    --grey:   #6c6c6c;
+    --grey-lt:#c0c0c0;
+    --grey-dk:#808080;
+    --win-bg: #008080;
+    --white:  #ffffff;
+    --black:  #000000;
+    --title-bar: #000080;
+    --btn-face: #c0c0c0;
+    --scanline: rgba(0,0,0,0.07);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--win-bg);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    color: var(--black);
+    min-height: 100vh;
+    padding: 24px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      var(--scanline) 0px,
+      var(--scanline) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .desktop-icons {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    z-index: 1;
+  }
+  .d-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: default;
+    color: var(--white);
+    font-family: 'VT323', monospace;
+    font-size: 13px;
+    text-shadow: 1px 1px 2px #000;
+    text-align: center;
+    width: 60px;
+  }
+  .d-icon .ico {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+  }
+
+  .window {
+    max-width: 820px;
+    margin: 0 auto;
+    background: var(--btn-face);
+    border-top: 2px solid var(--white);
+    border-left: 2px solid var(--white);
+    border-right: 2px solid var(--grey-dk);
+    border-bottom: 2px solid var(--grey-dk);
+    box-shadow: 4px 4px 0 #000, inset 1px 1px 0 #dfdfdf;
+    position: relative;
+    z-index: 10;
+  }
+
+  .title-bar {
+    background: linear-gradient(90deg, var(--title-bar) 0%, #1084d0 100%);
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+  }
+  .title-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--white);
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    letter-spacing: 0.5px;
+  }
+  .title-icon {
+    font-size: 14px;
+  }
+  .title-bar-buttons {
+    display: flex;
+    gap: 2px;
+  }
+  .tb-btn {
+    width: 16px;
+    height: 14px;
+    background: var(--btn-face);
+    border-top: 1px solid var(--white);
+    border-left: 1px solid var(--white);
+    border-right: 1px solid var(--grey-dk);
+    border-bottom: 1px solid var(--grey-dk);
+    display: grid;
+    place-items: center;
+    font-size: 9px;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    font-weight: bold;
+    color: #000;
+  }
+  .tb-btn:active { border-top: 1px solid var(--grey-dk); border-left: 1px solid var(--grey-dk); border-right: 1px solid var(--white); border-bottom: 1px solid var(--white); }
+
+  .menu-bar {
+    background: var(--btn-face);
+    border-bottom: 1px solid var(--grey-dk);
+    padding: 2px 4px;
+    display: flex;
+    gap: 2px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+  }
+  .menu-item {
+    padding: 2px 8px;
+    cursor: default;
+  }
+  .menu-item:hover { background: var(--title-bar); color: var(--white); }
+  .menu-item.active-menu { background: var(--title-bar); color: var(--white); }
+
+  .content {
+    padding: 20px 24px;
+    background: var(--btn-face);
+  }
+
+  .hero-panel {
+    background: var(--black);
+    border-top: 2px solid var(--grey-dk);
+    border-left: 2px solid var(--grey-dk);
+    border-right: 2px solid var(--white);
+    border-bottom: 2px solid var(--white);
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(57,77,205,0.08) 2px,
+      rgba(57,77,205,0.08) 4px
+    );
+  }
+  .hero-title {
+    font-family: 'VT323', monospace;
+    font-size: 64px;
+    color: var(--red);
+    text-shadow: 4px 4px 0 #7a0000, -1px -1px 0 rgba(255,255,255,0.1);
+    letter-spacing: 4px;
+    line-height: 1;
+    position: relative;
+    z-index: 1;
+    animation: flicker 5s infinite;
+  }
+  @keyframes flicker {
+    0%,95%,100% { opacity: 1; }
+    96% { opacity: 0.7; }
+    97% { opacity: 1; }
+    98% { opacity: 0.8; }
+  }
+  .hero-sub {
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    color: var(--grey-lt);
+    margin-top: 8px;
+    letter-spacing: 2px;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-lanes {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 16px;
+    position: relative;
+    z-index: 1;
+  }
+  .lane-key {
+    width: 40px;
+    height: 40px;
+    border-top: 3px solid var(--white);
+    border-left: 3px solid var(--white);
+    border-right: 3px solid #444;
+    border-bottom: 3px solid #444;
+    display: grid;
+    place-items: center;
+    font-family: 'VT323', monospace;
+    font-size: 26px;
+    color: var(--white);
+    transition: all 0.05s;
+    cursor: default;
+  }
+  .lane-key:nth-child(1) { background: var(--red); }
+  .lane-key:nth-child(2) { background: var(--blue); }
+  .lane-key:nth-child(3) { background: var(--teal); }
+  .lane-key:nth-child(4) { background: var(--grey); }
+  .lane-key:hover {
+    border-top: 3px solid #444;
+    border-left: 3px solid #444;
+    border-right: 3px solid var(--white);
+    border-bottom: 3px solid var(--white);
+    transform: translateY(2px);
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 14px;
+    position: relative;
+    z-index: 1;
+  }
+  .win-btn {
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    letter-spacing: 1px;
+    padding: 4px 16px;
+    background: var(--btn-face);
+    color: var(--black);
+    border-top: 2px solid var(--white);
+    border-left: 2px solid var(--white);
+    border-right: 2px solid var(--grey-dk);
+    border-bottom: 2px solid var(--grey-dk);
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: filter 0.1s;
+  }
+  .win-btn:hover { filter: brightness(0.95); }
+  .win-btn:active {
+    border-top: 2px solid var(--grey-dk);
+    border-left: 2px solid var(--grey-dk);
+    border-right: 2px solid var(--white);
+    border-bottom: 2px solid var(--white);
+  }
+  .win-btn.primary { background: var(--blue); color: var(--white); }
+  .win-btn.danger  { background: var(--red);  color: var(--white); }
+
+  .section {
+    margin-bottom: 16px;
+  }
+  .section-header {
+    background: var(--title-bar);
+    color: var(--white);
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+  .section-header .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .dot-red  { background: var(--red); }
+  .dot-teal { background: var(--teal); }
+  .dot-blue { background: var(--blue); }
+  .dot-grey { background: var(--grey-lt); }
+
+  .section-body {
+    background: var(--white);
+    border-top: 2px solid var(--grey-dk);
+    border-left: 2px solid var(--grey-dk);
+    border-right: 2px solid var(--white);
+    border-bottom: 2px solid var(--white);
+    padding: 14px 16px;
+  }
+  .section-body p {
+    line-height: 1.7;
+    color: #111;
+    margin-bottom: 8px;
+  }
+  .section-body p:last-child { margin-bottom: 0; }
+
+  .feature-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 16px;
+  }
+  .feature-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.5;
+    color: #111;
+  }
+  .feature-list li::before {
+    content: '►';
+    color: var(--red);
+    flex-shrink: 0;
+    margin-top: 1px;
+    font-size: 10px;
+  }
+
+  .controls-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+  }
+  .controls-table th {
+    background: var(--title-bar);
+    color: var(--white);
+    padding: 5px 12px;
+    text-align: left;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    letter-spacing: 1px;
+  }
+  .controls-table td {
+    padding: 5px 12px;
+    border-bottom: 1px solid #ddd;
+  }
+  .controls-table tr:last-child td { border-bottom: none; }
+  .controls-table tr:nth-child(even) td { background: #f0f0f0; }
+  .key-badge {
+    display: inline-block;
+    padding: 1px 8px;
+    border-top: 2px solid var(--white);
+    border-left: 2px solid var(--white);
+    border-right: 2px solid var(--grey-dk);
+    border-bottom: 2px solid var(--grey-dk);
+    background: var(--btn-face);
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    min-width: 28px;
+    text-align: center;
+  }
+  .key-badge.k1 { background: var(--red);  color: #fff; }
+  .key-badge.k2 { background: var(--blue); color: #fff; }
+  .key-badge.k3 { background: var(--teal); color: #fff; }
+  .key-badge.k4 { background: var(--grey); color: #fff; }
+
+  .steps {
+    list-style: none;
+    counter-reset: steps;
+  }
+  .steps li {
+    counter-increment: steps;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 8px;
+    color: #111;
+    line-height: 1.5;
+  }
+  .steps li::before {
+    content: counter(steps);
+    background: var(--blue);
+    color: var(--white);
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    min-width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .gallery-item {
+    border-top: 2px solid var(--white);
+    border-left: 2px solid var(--white);
+    border-right: 2px solid var(--grey-dk);
+    border-bottom: 2px solid var(--grey-dk);
+    overflow: hidden;
+    background: var(--black);
+    position: relative;
+  }
+  .gallery-thumb {
+    width: 100%;
+    aspect-ratio: 16/10;
+    background: var(--black);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'VT323', monospace;
+    font-size: 13px;
+    color: var(--grey-lt);
+    text-align: center;
+    padding: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gallery-thumb::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(57,77,205,0.1) 3px,
+      rgba(57,77,205,0.1) 4px
+    );
+  }
+  .gallery-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    inset: 0;
+  }
+  .gallery-caption {
+    background: var(--title-bar);
+    color: var(--white);
+    font-family: 'VT323', monospace;
+    font-size: 14px;
+    padding: 2px 8px;
+    letter-spacing: 1px;
+  }
+
+  .contribute-list {
+    list-style: none;
+  }
+  .contribute-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px dashed #ccc;
+    color: #111;
+    line-height: 1.5;
+  }
+  .contribute-list li:last-child { border-bottom: none; }
+  .contribute-list li::before {
+    content: '▸';
+    color: var(--teal);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .status-bar {
+    background: var(--btn-face);
+    border-top: 1px solid var(--grey-dk);
+    padding: 3px 8px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #333;
+  }
+  .status-segment {
+    border-top: 1px solid var(--grey-dk);
+    border-left: 1px solid var(--grey-dk);
+    border-right: 1px solid var(--white);
+    border-bottom: 1px solid var(--white);
+    padding: 1px 10px;
+  }
+
+  .judge-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .chip {
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    padding: 2px 12px;
+    border-top: 2px solid var(--white);
+    border-left: 2px solid var(--white);
+    border-right: 2px solid var(--grey-dk);
+    border-bottom: 2px solid var(--grey-dk);
+    letter-spacing: 1px;
+  }
+  .chip.perfect { background: #ffd700; color: #000; }
+  .chip.great   { background: var(--teal);  color: #fff; }
+  .chip.good    { background: var(--blue);  color: #fff; }
+  .chip.miss    { background: var(--red);   color: #fff; }
+
+  .footer {
+    text-align: center;
+    margin-top: 20px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    color: var(--white);
+    text-shadow: 1px 1px 0 #000;
+    letter-spacing: 1px;
+  }
+
+  .taskbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--btn-face);
+    border-top: 2px solid var(--white);
+    padding: 3px 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    z-index: 9998;
+  }
+  .start-btn {
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    padding: 2px 10px;
+    background: var(--btn-face);
+    border-top: 2px solid var(--white);
+    border-left: 2px solid var(--white);
+    border-right: 2px solid var(--grey-dk);
+    border-bottom: 2px solid var(--grey-dk);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+  }
+  .taskbar-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--grey-dk);
+    margin: 0 4px;
+  }
+  .taskbar-window {
+    font-family: 'VT323', monospace;
+    font-size: 14px;
+    padding: 2px 12px;
+    background: var(--btn-face);
+    border-top: 2px solid var(--grey-dk);
+    border-left: 2px solid var(--grey-dk);
+    border-right: 2px solid var(--white);
+    border-bottom: 2px solid var(--white);
+    cursor: pointer;
+    letter-spacing: 0.5px;
+  }
+  .taskbar-clock {
+    margin-left: auto;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    border-top: 1px solid var(--grey-dk);
+    border-left: 1px solid var(--grey-dk);
+    border-right: 1px solid var(--white);
+    border-bottom: 1px solid var(--white);
+    padding: 3px 8px;
+  }
+
+  hr.win-hr {
+    border: none;
+    border-top: 1px solid var(--grey-dk);
+    border-bottom: 1px solid var(--white);
+    margin: 12px 0;
+  }
+
+  .blink { animation: blink 1s step-end infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  @keyframes fall {
+    0%   { transform: translateY(-40px); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { transform: translateY(60px); opacity: 0; }
+  }
+  .falling-notes {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .note {
+    width: 40px;
+    height: 14px;
+    border-radius: 2px;
+    animation: fall 1.6s linear infinite;
+    opacity: 0;
+  }
+  .note:nth-child(1) { background: var(--red);  animation-delay: 0s; }
+  .note:nth-child(2) { background: var(--blue); animation-delay: 0.4s; }
+  .note:nth-child(3) { background: var(--teal); animation-delay: 0.8s; }
+  .note:nth-child(4) { background: var(--grey); animation-delay: 1.2s; }
+</style>
+</head>
+<body>
+
+<div class="desktop-icons">
+  <div class="d-icon">
+    <div class="ico">🎮</div>
+    BeatTapper
+  </div>
+  <div class="d-icon">
+    <div class="ico">📁</div>
+    Source
+  </div>
+  <div class="d-icon">
+    <div class="ico">🗑️</div>
+    Recycle Bin
+  </div>
+</div>
+
+<div class="window">
+
+  <div class="title-bar">
+    <div class="title-bar-left">
+      <span class="title-icon">🎵</span>
+      BeatTapper — README.md
+    </div>
+    <div class="title-bar-buttons">
+      <div class="tb-btn">_</div>
+      <div class="tb-btn">□</div>
+      <div class="tb-btn">✕</div>
+    </div>
+  </div>
+
+  <div class="menu-bar">
+    <span class="menu-item active-menu">File</span>
+    <span class="menu-item">Edit</span>
+    <span class="menu-item">View</span>
+    <span class="menu-item">Help</span>
+  </div>
+
+  <div class="content">
+
+    <div class="hero-panel">
+      <div class="falling-notes">
+        <div class="note"></div>
+        <div class="note"></div>
+        <div class="note"></div>
+        <div class="note"></div>
+      </div>
+      <div class="hero-title">BEATTAPPER<span class="blink">_</span></div>
+      <div class="hero-sub">A FAST, RETRO-THEMED RHYTHM ARCADE GAME</div>
+      <div class="hero-lanes">
+        <div class="lane-key">A</div>
+        <div class="lane-key">S</div>
+        <div class="lane-key">D</div>
+        <div class="lane-key">F</div>
+      </div>
+      <div class="judge-chips">
+        <div style="flex:1"></div>
+        <div class="chip perfect">PERFECT</div>
+        <div class="chip great">GREAT</div>
+        <div class="chip good">GOOD</div>
+        <div class="chip miss">MISS</div>
+        <div style="flex:1"></div>
+      </div>
+      <div class="btn-row">
+        <a href="https://sudo-aju.github.io/BeatTapper/src/index.html" class="win-btn primary" target="_blank">▶ PLAY GAME</a>
+        <a href="src/main.js" class="win-btn danger">⟨/⟩ VIEW SOURCE</a>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="dot dot-blue"></span>
+        ABOUT.TXT
+      </div>
+      <div class="section-body">
+        <p>BeatTapper is a responsive rhythm game featuring four-lane gameplay. Hit falling notes in sync with the beat using keys <strong>A S D F</strong>.</p>
+        <p>UI and theme inspired by <strong>WIN95</strong> — clean playfield, dynamic hold notes, and a combo + judgement scoring system. Optimized for smooth animation and precise input feedback.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="dot dot-teal"></span>
+        FEATURES.EXE
+      </div>
+      <div class="section-body">
+        <ul class="feature-list">
+          <li>Responsive four-lane canvas</li>
+          <li>PERFECT / GREAT / GOOD / MISS judgement</li>
+          <li>Real-time lane flash & hit feedback</li>
+          <li>Combo counter + score tracking</li>
+          <li>Vanilla JS — zero dependencies</li>
+          <li>requestAnimationFrame 60 FPS loop</li>
+          <li>Modular beatmap/note generation</li>
+          <li>Custom map support 🤓</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="dot dot-red"></span>
+        HOW_TO_PLAY.TXT
+      </div>
+      <div class="section-body">
+        <ol class="steps">
+          <li>Open the Play link in the About section of this repo.</li>
+          <li>Wait for the game to begin — no install needed.</li>
+          <li>Press the correct key when a note crosses the hit line.</li>
+          <li>Hold <strong>A/S/D/F</strong> for sustained hold notes until complete.</li>
+          <li>Score points for timing accuracy. Keep that combo alive.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="dot dot-grey"></span>
+        CONTROLS.CFG
+      </div>
+      <div class="section-body">
+        <table class="controls-table">
+          <thead>
+            <tr>
+              <th>KEY</th>
+              <th>LANE</th>
+              <th>COLOUR</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="key-badge k1">A</span></td><td>Lane 1</td><td>Red — #e35f5f</td></tr>
+            <tr><td><span class="key-badge k2">S</span></td><td>Lane 2</td><td>Blue — #394dcd</td></tr>
+            <tr><td><span class="key-badge k3">D</span></td><td>Lane 3</td><td>Teal — #208c71</td></tr>
+            <tr><td><span class="key-badge k4">F</span></td><td>Lane 4</td><td>Grey — #6c6c6c</td></tr>
+          </tbody>
+        </table>
+        <hr class="win-hr">
+        <p style="margin-top:6px;font-size:12px;color:#555;">Notes fall vertically. The hit line is the timing window for judgement.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="dot dot-blue"></span>
+        GALLERY.BMP
+      </div>
+      <div class="section-body">
+        <div class="gallery-grid">
+          <div class="gallery-item">
+            <div class="gallery-thumb">
+              <img src="https://github.com/Sudo-Aju/BeatTapper/blob/main/Assets/Gallery/screenshot-1.png?raw=true" alt="Gameplay" onerror="this.style.display='none'">
+              [GAMEPLAY.PNG]
+            </div>
+            <div class="gallery-caption">GAMEPLAY</div>
+          </div>
+          <div class="gallery-item">
+            <div class="gallery-thumb">
+              <img src="https://github.com/Sudo-Aju/BeatTapper/blob/main/Assets/Gallery/screenshot-2.png?raw=true" alt="Main Menu" onerror="this.style.display='none'">
+              [MAINMENU.PNG]
+            </div>
+            <div class="gallery-caption">MAIN MENU</div>
+          </div>
+          <div class="gallery-item">
+            <div class="gallery-thumb">
+              <img src="https://github.com/Sudo-Aju/BeatTapper/blob/main/Assets/Gallery/screenshot-3.png?raw=true" alt="Levels" onerror="this.style.display='none'">
+              [LEVELS.PNG]
+            </div>
+            <div class="gallery-caption">LEVELS</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="dot dot-teal"></span>
+        WANT_TO_HELP.TXT
+      </div>
+      <div class="section-body">
+        <ul class="contribute-list">
+          <li>Submit bug fixes or gameplay improvements via PR.</li>
+          <li>Add new beatmaps, audio, or visual effects.</li>
+          <li>Enhance UI — score metrics, level select, multidevice support.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="status-bar">
+    <span class="status-segment">README.md</span>
+    <span class="status-segment">Vanilla JS · HTML5 Canvas</span>
+    <span class="status-segment">Made with ❤ ~ Azmeer Pirani</span>
+  </div>
+
+</div>
+
+<div class="footer">Built with HTML5 Canvas, vanilla JS, and a passion for rhythm games.</div>
+<div style="height:40px"></div>
+
+<div class="taskbar">
+  <div class="start-btn">⊞ Start</div>
+  <div class="taskbar-divider"></div>
+  <div class="taskbar-window">🎵 BeatTapper — README</div>
+  <div class="taskbar-clock" id="clock">--:--</div>
+</div>
+
+<script>
+  function tick() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('clock').textContent = h + ':' + m;
+  }
+  tick();
+  setInterval(tick, 10000);
+
+  document.querySelectorAll('.lane-key').forEach(k => {
+    document.addEventListener('keydown', e => {
+      const map = { a:0, s:1, d:2, f:3 };
+      const idx = map[e.key.toLowerCase()];
+      const keys = document.querySelectorAll('.lane-key');
+      if (idx !== undefined && keys[idx] === k) {
+        k.style.borderTopColor = '#444';
+        k.style.borderLeftColor = '#444';
+        k.style.borderRightColor = '#fff';
+        k.style.borderBottomColor = '#fff';
+        k.style.transform = 'translateY(2px)';
+      }
+    });
+    document.addEventListener('keyup', e => {
+      const map = { a:0, s:1, d:2, f:3 };
+      const idx = map[e.key.toLowerCase()];
+      const keys = document.querySelectorAll('.lane-key');
+      if (idx !== undefined && keys[idx] === k) {
+        k.style.borderTopColor = '';
+        k.style.borderLeftColor = '';
+        k.style.borderRightColor = '';
+        k.style.borderBottomColor = '';
+        k.style.transform = '';
+      }
+    });
+  });
+</script>
+</body>
+</html>
