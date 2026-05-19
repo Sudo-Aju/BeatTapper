@@ -1,1 +1,1 @@
-[![BeatTapper Readme](/banner.svg)](https://sudo-aju.github.io/BeatTapper/src/index.html)
+[![BeatTapper Readme](/banner.svg)](https://sudo-aju.github.io/BeatTapper/src/home.html)
