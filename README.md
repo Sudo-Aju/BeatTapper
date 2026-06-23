@@ -4,7 +4,7 @@
 
 > A fast, retro themed rhythm arcade game built with vanilla JavaScript and HTML5 Canvas.
 
-[Play BeatTapper](src/index.html) . [View Source](src/main.js) . [Open Demo](src/index.html)
+[View Source](src/main.js) . [Open Demo](https://sudo-aju.github.io/BeatTapper/src/index.html)
 
 ---
 
