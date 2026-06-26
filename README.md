@@ -75,6 +75,8 @@ Score points for timing accuracy and keep the combo alive.
 - Codex
 
 ### AI-assisted tasks
+- drafted game ideas
+- inspiration
 - Fixed gameplay bugs and rendering issues
 - identified typos and redundant code
 - Added defensive programming practices including:
