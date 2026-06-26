@@ -73,6 +73,7 @@ Score points for timing accuracy and keep the combo alive.
 - Vs Code Copilot
 - Claude
 - Codex
+- Gemini (don't remember if i used it or now 😅)
 
 ### AI-assisted tasks
 - drafted game ideas
@@ -88,7 +89,7 @@ Score points for timing accuracy and keep the combo alive.
 - Removed unnecessary animatons
 - Added saftey checks to reduce runtime errors
 
-### Example Prompts
+### some of the exact Prompts
 - `"teh notes are invisible in the starting and then repears after the line, the notes are still not appearing in the starting, fix it."`
 - `"remove all animations, also the flying ones after line."`
 - `"remove all redundant code or anything wihch is not needed."`
