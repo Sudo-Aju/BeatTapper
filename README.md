@@ -93,7 +93,7 @@ Score points for timing accuracy and keep the combo alive.
 - `"teh notes are invisible in the starting and then repears after the line, the notes are still not appearing in the starting, fix it."`
 - `"remove all animations, also the flying ones after line."`
 - `"remove all redundant code or anything wihch is not needed."`
-- `"please add security checks, Make sure the code doesn't break."`
+- `"please add security checks, Make sure the code doesn't break"`
 
 ---
 
